@@ -7,8 +7,9 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Ensure database is initialized
+# Ensure system is initialized
 init_db()
+ml_model.init_model()
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
@@ -22,15 +23,22 @@ def analyze():
     budget = int(data.get('budget', 10000))
     
     risk_score = ml_model.predict_risk(team_size, complexity, estimated_days, budget, 10)
-    
     success_prob = 100 - risk_score
+    
+    # Generate enhanced logic
+    risk_reason = ml_model.get_risk_reasoning(team_size, complexity, estimated_days, budget)
+    rec_count = team_size + 2 if risk_score > 50 else team_size + 1
+    resource_details = ml_model.get_resource_breakdown(rec_count, domain)
     
     return jsonify({
         "status": "success",
         "metrics": {
             "risk_score": round(risk_score, 1),
             "success_probability": round(success_prob, 1),
-            "recommended_action": f"Add {team_size + 2 if risk_score > 50 else team_size + 1} team members"
+            "recommended_action": f"Add {rec_count} team members",
+            "risk_reason": risk_reason,
+            "success_reason": "High success probability is driven by adequate resource allocation and manageable task complexity." if success_prob > 60 else "Success probability is constrained by current timeline and resource gaps.",
+            "resource_details": resource_details
         },
         "scenarios": [
             { "name": "Current Timeline", "risk": round(risk_score, 1) },
@@ -125,20 +133,7 @@ def get_pm_stats():
         "highRisk": high_risk
     })
 
-@app.route('/api/ml/train', methods=['POST'])
-def train_model():
-    if 'file' not in request.files:
-        return jsonify({"status": "error", "message": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"status": "error", "message": "No selected file"}), 400
-    if file:
-        filepath = os.path.join(os.path.dirname(__file__), file.filename)
-        file.save(filepath)
-        result = ml_model.train_model(filepath)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        return jsonify(result)
+# Removed /api/ml/train for production-ready backend training
 
 # --- Mock Persistence for Profile and Settings ---
 user_profile = {
