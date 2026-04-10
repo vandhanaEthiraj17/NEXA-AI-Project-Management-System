@@ -35,6 +35,7 @@ const NewAnalysisPage = () => {
   });
 
   const [files, setFiles] = useState([]);
+  const [teamFiles, setTeamFiles] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,6 +45,11 @@ const NewAnalysisPage = () => {
   const handleFileChange = (e) => {
     const uploadedFiles = Array.from(e.target.files);
     setFiles(prev => [...prev, ...uploadedFiles]);
+  };
+
+  const handleTeamFileChange = (e) => {
+    const uploadedFiles = Array.from(e.target.files);
+    setTeamFiles(prev => [...prev, ...uploadedFiles]);
   };
 
   const handleSelectTask = (task) => {
@@ -170,35 +176,71 @@ const NewAnalysisPage = () => {
                 {renderFormFields()}
               </div>
 
-              {/* Reference Files Section */}
-              <div style={{ borderTop: '1px solid #f4f5f7', paddingTop: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600, color: '#44546f' }}>Reference Files</label>
-                <div style={{ display: 'grid', gridTemplateColumns: files.length > 0 ? '1fr 1fr' : '1fr', gap: '1rem' }}>
-                  <div 
-                    onClick={() => document.getElementById('file-upload').click()}
-                    style={{ border: '2px dashed #dfe1e6', padding: '1.5rem', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', background: '#f8f9fa' }}
-                    onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
-                    onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
-                  >
-                    <Upload size={24} style={{ color: '#0052cc', marginBottom: '0.5rem' }} />
-                    <div style={{ fontSize: '0.85rem', color: '#172b4d', fontWeight: 500 }}>Drop files here</div>
-                    <div style={{ fontSize: '0.75rem', color: '#5e6c84' }}>PDF, CSV, Excel, Images</div>
-                    <input id="file-upload" type="file" multiple hidden onChange={handleFileChange} />
-                  </div>
-
-                  {files.length > 0 && (
-                    <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#44546f', marginBottom: '0.75rem' }}>Uploaded ({files.length})</p>
-                      <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
-                        {files.map((f, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#5e6c84', marginBottom: '0.4rem' }}>
-                            <FileText size={12} /> {f.name}
-                          </div>
-                        ))}
-                      </div>
+              {/* File Uploads Section */}
+              <div style={{ borderTop: '1px solid #f4f5f7', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%' }}>
+                
+                {/* Team Members Upload */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600, color: '#44546f' }}>Team Members Details</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div 
+                      onClick={() => document.getElementById('team-file-upload').click()}
+                      style={{ border: '2px dashed #dfe1e6', padding: '1.5rem', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', background: '#f8f9fa' }}
+                      onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
+                      onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
+                    >
+                      <Upload size={24} style={{ color: '#0052cc', marginBottom: '0.5rem' }} />
+                      <div style={{ fontSize: '0.85rem', color: '#172b4d', fontWeight: 500 }}>Upload Team Data</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5e6c84' }}>Excel, CSV (from local storage)</div>
+                      <input id="team-file-upload" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden onChange={handleTeamFileChange} />
                     </div>
-                  )}
+
+                    {teamFiles.length > 0 && (
+                      <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
+                        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#44546f', marginBottom: '0.75rem' }}>Ready for AI Analysis ({teamFiles.length})</p>
+                        <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                          {teamFiles.map((f, i) => (
+                            <div key={`tf-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#5e6c84', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <FileText size={12} style={{ flexShrink: 0 }} /> {f.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Reference Files Upload */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600, color: '#44546f' }}>Project Reference Files</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div 
+                      onClick={() => document.getElementById('file-upload').click()}
+                      style={{ border: '2px dashed #dfe1e6', padding: '1.5rem', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', background: '#f8f9fa' }}
+                      onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
+                      onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
+                    >
+                      <Upload size={24} style={{ color: '#0052cc', marginBottom: '0.5rem' }} />
+                      <div style={{ fontSize: '0.85rem', color: '#172b4d', fontWeight: 500 }}>Drop reference files</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5e6c84' }}>PDF, Docs, Images</div>
+                      <input id="file-upload" type="file" multiple hidden onChange={handleFileChange} />
+                    </div>
+
+                    {files.length > 0 && (
+                      <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
+                        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#44546f', marginBottom: '0.75rem' }}>Uploaded ({files.length})</p>
+                        <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                          {files.map((f, i) => (
+                            <div key={`rf-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#5e6c84', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <FileText size={12} style={{ flexShrink: 0 }} /> {f.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
 

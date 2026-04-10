@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 export const DataContext = createContext();
 
@@ -12,7 +12,7 @@ export const DataProvider = ({ children }) => {
   const [sprints, setSprints] = useState([]);
   const [pmStats, setPmStats] = useState(null);
 
-  const analyzeData = async (formData, currentDomain) => {
+  const analyzeData = useCallback(async (formData, currentDomain) => {
     setIsAnalyzing(true);
     setError(null);
     try {
@@ -23,8 +23,13 @@ export const DataProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('Server error');
+      
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Server error');
+      }
+      
       setProjectData(data);
       return true;
     } catch (err) {
@@ -33,18 +38,26 @@ export const DataProvider = ({ children }) => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, []);
 
-  const fetchTasks = async (sprintId) => {
+  const fetchTasks = useCallback(async (sprintId) => {
     try {
       const url = sprintId ? `http://localhost:5000/api/tasks?sprint_id=${sprintId}` : `http://localhost:5000/api/tasks`;
       const response = await fetch(url);
       const data = await response.json();
       setTasks(data);
     } catch (err) { console.error(err); }
-  };
+  }, []);
 
-  const createTask = async (taskData) => {
+  const fetchPmStats = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/pm/stats`);
+      const data = await response.json();
+      setPmStats(data);
+    } catch (err) { console.error(err); }
+  }, []);
+
+  const createTask = useCallback(async (taskData) => {
     try {
       const response = await fetch(`http://localhost:5000/api/tasks`, {
         method: 'POST',
@@ -55,11 +68,20 @@ export const DataProvider = ({ children }) => {
         fetchTasks(taskData.sprint_id);
         fetchPmStats();
         return true;
+      } else {
+        const errData = await response.text();
+        console.error("Task creation failed:", errData);
+        alert(`Server Error: Could not save the task. Details: ${errData}`);
+        return false;
       }
-    } catch (err) { console.error(err); return false; }
-  };
+    } catch (err) { 
+        console.error(err); 
+        alert(`Network Error: ${err.message}`);
+        return false; 
+    }
+  }, [fetchTasks, fetchPmStats]);
 
-  const updateTaskStatus = async (taskId, status, sprintId) => {
+  const updateTaskStatus = useCallback(async (taskId, status, sprintId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
         method: 'PUT',
@@ -71,17 +93,17 @@ export const DataProvider = ({ children }) => {
         fetchPmStats();
       }
     } catch (err) { console.error(err); }
-  };
+  }, [fetchTasks, fetchPmStats]);
 
-  const fetchSprints = async () => {
+  const fetchSprints = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:5000/api/sprints`);
       const data = await response.json();
       setSprints(data);
     } catch (err) { console.error(err); }
-  };
+  }, []);
 
-  const createSprint = async (name) => {
+  const createSprint = useCallback(async (name) => {
     try {
       const response = await fetch(`http://localhost:5000/api/sprints`, {
         method: 'POST',
@@ -90,15 +112,7 @@ export const DataProvider = ({ children }) => {
       });
       if (response.ok) fetchSprints();
     } catch (err) { console.error(err); }
-  };
-
-  const fetchPmStats = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/pm/stats`);
-      const data = await response.json();
-      setPmStats(data);
-    } catch (err) { console.error(err); }
-  };
+  }, [fetchSprints]);
 
   return (
     <DataContext.Provider value={{ 

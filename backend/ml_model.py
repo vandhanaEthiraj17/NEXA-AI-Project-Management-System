@@ -8,16 +8,22 @@ import os
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'risk_model.joblib')
 DEFAULT_DATA_PATH = os.path.join(os.path.dirname(__file__), 'test_dataset.csv')
 
+# Global cache to prevent redundant disk I/O
+_cached_model = None
+
 def init_model():
     """Initializes the model on startup: loads if exists, otherwise tries to auto-train."""
+    global _cached_model
     if os.path.exists(MODEL_PATH):
-        print(f"Model found at {MODEL_PATH}. Loading...")
+        print(f"Model found at {MODEL_PATH}. Loading into memory...")
         try:
-            return joblib.load(MODEL_PATH)
+            _cached_model = joblib.load(MODEL_PATH)
+            return _cached_model
         except Exception as e:
             print(f"Error loading model: {e}. Attempting re-training...")
     
-    return auto_train()
+    _cached_model = auto_train()
+    return _cached_model
 
 def auto_train():
     """Attempts to train the model using a default dataset if available."""
@@ -42,6 +48,53 @@ def auto_train():
     
     print("No training data found. System will use fallback heuristics.")
     return None
+
+def validate_description(description):
+    """
+    Validates if the description provides enough context for a professional AI analysis.
+    Returns (is_valid, error_message)
+    """
+    if not description or len(description.strip()) < 5:
+        return False, "Description is too short. Please provide a brief project scope to analyze."
+    
+    return True, ""
+
+def analyze_complexity(description):
+    """
+    Heuristic-based complexity analysis for project descriptions.
+    Returns a score between 1 and 10.
+    """
+    is_valid, error = validate_description(description)
+    if not is_valid:
+        # We still return a baseline for internal calculations if called, 
+        # but the API layer should catch this via validate_description first.
+        return 5.0
+        
+    score = 3.0 # Starting point
+    desc_lower = description.lower()
+    
+    # Keyword-based escalation
+    high_complexity_keywords = [
+        'international', 'global', 'security', 'compliance', 'legacy', 
+        'migration', 'real-time', 'architecture', 'integration', 'multi-platform',
+        'critical', 'blockchain', 'ai', 'machine learning', 'microservices'
+    ]
+    
+    med_complexity_keywords = [
+        'database', 'api', 'dashboard', 'user', 'interface', 'support',
+        'deployment', 'optimization', 'refactor'
+    ]
+    
+    for word in high_complexity_keywords:
+        if word in desc_lower: score += 1.0
+        
+    for word in med_complexity_keywords:
+        if word in desc_lower: score += 0.4
+        
+    # Length-based escalation (deeper descriptions usually imply more details/layers)
+    score += min(len(description) / 100, 2.0)
+    
+    return min(max(round(score, 1), 1.0), 10.0)
 def train_model(csv_path):
     """
     Trains a RandomForest model on the provided CSV and saves it.
@@ -98,12 +151,20 @@ def predict_risk(team_size, complexity, estimated_days, budget=10000, task_count
     Predicts risk using the trained model. 
     Falls back to a baseline heuristic if no model is found.
     """
-    if os.path.exists(MODEL_PATH):
+    global _cached_model
+    
+    # Load into cache if not already present
+    if _cached_model is None and os.path.exists(MODEL_PATH):
         try:
-            model = joblib.load(MODEL_PATH)
+            _cached_model = joblib.load(MODEL_PATH)
+        except:
+            pass
+
+    if _cached_model is not None:
+        try:
             # Create a 2D array for prediction
             input_data = [[team_size, complexity, estimated_days, budget, task_count]]
-            prediction = model.predict(input_data)[0]
+            prediction = _cached_model.predict(input_data)[0]
             
             # Map back to 0-100 scale (High: 85, Med: 50, Low: 15)
             risk_map = {2: 85.0, 1: 50.0, 0: 15.0}
@@ -143,50 +204,43 @@ def get_risk_reasoning(team_size, complexity, estimated_days, budget):
     return " ".join(logic)
 
 def get_resource_breakdown(count, domain):
-    """Generates a detailed breakdown of team roles, experience, and tasks."""
-    resources = []
-    
-    software_roles = [
-        {"role": "Lead System Architect", "exp": "8+ Years", "task": "Architecting scalable infrastructure and high-level design."},
-        {"role": "Senior Fullstack Developer", "exp": "5-7 Years", "task": "Core business logic implementation and API integration."},
-        {"role": "Mid-level Frontend Developer", "exp": "3-5 Years", "task": "Responsive UI/UX development and client-side logic."},
-        {"role": "DevOps Engineer", "exp": "4+ Years", "task": "CI/CD pipeline management and cloud deployment."},
-        {"role": "QA Automation Engineer", "exp": "3+ Years", "task": "End-to-end testing and quality assurance."},
-        {"role": "UI/UX Designer", "exp": "4+ Years", "task": "User journey mapping and high-fidelity mockups."},
-        {"role": "Database Administrator", "exp": "6+ Years", "task": "Schema optimization and data security management."}
-    ]
-    
-    business_roles = [
-        {"role": "Senior Market Analyst", "exp": "6+ Years", "task": "Competitive landscape analysis and trend forecasting."},
-        {"role": "Operations Manager", "exp": "7+ Years", "task": "Process optimization and resource coordination."},
-        {"role": "Financial Consultant", "exp": "8+ Years", "task": "Budget auditing and ROI projection."},
-        {"role": "Customer Success Lead", "exp": "4+ Years", "task": "Retention strategy and feedback loop management."},
-        {"role": "Sales Strategist", "exp": "5+ Years", "task": "Channel expansion and revenue growth planning."}
-    ]
-    
-    hardware_roles = [
-        {"role": "Lead Mechanical Engineer", "exp": "10+ Years", "task": "Physical prototyping and structural integrity testing."},
-        {"role": "Embedded Systems Expert", "exp": "7+ Years", "task": "Firmware development and sensor integration."},
-        {"role": "Supply Chain Specialist", "exp": "5+ Years", "task": "Procurement and vendor relationship management."},
-        {"role": "Industrial Designer", "exp": "6+ Years", "task": "Ergonomics and aesthetic design optimization."},
-        {"role": "Safety & Compliance Officer", "exp": "8+ Years", "task": "ISO certification and regulatory compliance."}
-    ]
-    
-    pool = software_roles
-    if domain == 'Business': pool = business_roles
-    elif domain == 'Hardware': pool = hardware_roles
-    
-    # Cycle through pool to fulfill count
-    for i in range(count):
-        role_data = pool[i % len(pool)]
-        resources.append({
-            "id": i + 1,
-            "role": role_data["role"],
-            "experience": role_data["exp"],
-            "tasks": role_data["task"]
-        })
+    """Generates a detailed breakdown of specific team members based on Excel data."""
+    try:
+        file_path = os.path.join(os.path.dirname(__file__), 'developers data.xlsx')
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Developers data excel file not found.")
+            
+        df = pd.read_excel(file_path)
         
-    return resources
+        # Sort by PerformanceScore descending to get the best developers
+        df = df.sort_values(by='PerformanceScore', ascending=False)
+        
+        # Take the top 'count' developers
+        selected = df.head(count)
+        
+        resources = []
+        for i, row in selected.iterrows():
+            resources.append({
+                "id": str(row.get('EmployeeID', i)),
+                "name": str(row.get('Name', 'Unknown')),
+                "role": str(row.get('Role', 'Developer')),
+                "experience": str(row.get('Experience (Years)', 'N/A')) + ' Years',
+                "skills": str(row.get('Skills', 'N/A')),
+                "availability": str(row.get('Availability', 'N/A')),
+                "salary": str(row.get('Salary', 'N/A')),
+                "performance": str(row.get('PerformanceScore', 'N/A'))
+            })
+            
+        # If we need more than we have, we might duplicate but the dataset has plenty.
+        # Fallback just in case counts exceed available developers
+        while len(resources) < count and len(resources) > 0:
+            resources.append(resources[len(resources) % len(selected)])
+            
+        return resources
+    except Exception as e:
+        print(f"Error loading developer data: {e}")
+        # Fallback to a single mock developer if it fails entirely
+        return [{"id": "error", "name": "System Error", "role": "Data missing", "experience": "N/A", "skills": "N/A", "availability": "N/A", "salary": "N/A", "performance": "N/A"}]
 
 if __name__ == "__main__":
     import sys
