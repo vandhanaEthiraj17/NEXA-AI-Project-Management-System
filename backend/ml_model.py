@@ -57,6 +57,19 @@ def validate_description(description):
     if not description or len(description.strip()) < 5:
         return False, "Description is too short. Please provide a brief project scope to analyze."
     
+    # Gibberish detection heuristics
+    words = description.split()
+    if not words: return False, "Invalid input."
+    
+    avg_len = sum(len(w) for w in words) / len(words)
+    if avg_len > 12:
+        return False, "Input rejected: AI Model flagged the descriptive scope as malformed or gibberish."
+        
+    vowels = set('aeiouAEIOU')
+    for word in words:
+        if len(word) > 8 and not any(char in vowels for char in word):
+            return False, "Input rejected: Unrecognizable word character sequences detected."
+            
     return True, ""
 
 def analyze_complexity(description):
@@ -178,28 +191,29 @@ def predict_risk(team_size, complexity, estimated_days, budget=10000, task_count
         base_risk = (complexity * 10) + (team_size * 2) - (estimated_days / 10)
         return max(min(base_risk, 100), 0)
 
-def get_risk_reasoning(team_size, complexity, estimated_days, budget):
+def get_risk_reasoning(team_size, complexity, estimated_days, budget, title="This project"):
     """Generates a human-readable reason for the predicted risk score."""
     logic = []
+    _title = title.strip() or "This project"
     
     # Timeline vs Complexity
     if estimated_days < 20 and complexity > 6:
-        logic.append(f"Highly aggressive timeline ({estimated_days} days) for a project of complexity level {complexity}.")
+        logic.append(f"For '{_title}', there is a highly aggressive timeline ({estimated_days} days) relative to the predicted complexity level {complexity}.")
     elif estimated_days < 10:
-        logic.append("Extremely short deadline poses severe integration and testing risks.")
+        logic.append(f"Extremely short deadline for '{_title}' poses severe integration and testing risks.")
         
     # Manpower issues
     if team_size < 3 and complexity > 5:
-        logic.append(f"Critical staffing shortage: A team of {team_size} is insufficient for high-complexity tasks.")
+        logic.append(f"Critical staffing shortage: A team of {team_size} is insufficient for the high-complexity tasks required in '{_title}'.")
     elif complexity > 8 and team_size < 10:
-        logic.append("Project scale requires specialized leads which are currently missing from the small team allocation.")
+        logic.append(f"The scale of '{_title}' requires specialized leads which are currently missing from the small {team_size}-person team allocation.")
         
     # Budget constraints
     if budget < 5000 and complexity > 7:
-        logic.append("Financial resources are tightly constrained relative to the technical scope.")
+        logic.append(f"Financial resources for '{_title}' are tightly constrained relative to the technical scope.")
 
     if not logic:
-        logic.append("Variables indicate a stable trajectory, but standard operational risks apply.")
+        logic.append(f"Variables for '{_title}' indicate a stable trajectory, but standard operational risks apply.")
         
     return " ".join(logic)
 

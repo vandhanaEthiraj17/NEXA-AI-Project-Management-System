@@ -17,6 +17,7 @@ def analyze():
         data = request.json
         domain = data.get('domain', 'Software')
         description = data.get('description', '')
+        title = data.get('title', 'Your Project')
         
         # 0. Validate Input Quality (Professional Guardrail)
         is_valid, error_msg = ml_model.validate_description(description)
@@ -45,18 +46,20 @@ def analyze():
         success_prob = 100 - risk_score
         
         # 4. Generate Reasoning and Details
-        risk_reason = ml_model.get_risk_reasoning(team_size, complexity, estimated_days, budget)
+        risk_reason = ml_model.get_risk_reasoning(team_size, complexity, estimated_days, budget, title)
         rec_count = team_size + 2 if risk_score > 50 else team_size + 1
         resource_details = ml_model.get_resource_breakdown(rec_count, domain)
+        
+        _title_str = title.strip() if title.strip() else "your project"
         
         return jsonify({
             "status": "success",
             "metrics": {
                 "risk_score": round(risk_score, 1),
                 "success_probability": round(success_prob, 1),
-                "recommended_action": f"Add {rec_count} team members",
+                "recommended_action": f"Add {rec_count} team members specific to '{_title_str}'",
                 "risk_reason": risk_reason,
-                "success_reason": "High success probability is driven by adequate resource allocation and manageable task complexity." if success_prob > 60 else "Success probability is constrained by current timeline and resource gaps.",
+                "success_reason": f"High success probability for '{_title_str}' is driven by adequate resource allocation and manageable complexity." if success_prob > 60 else f"Success for '{_title_str}' is heavily constrained by current timeline and operational gaps.",
                 "resource_details": resource_details
             },
             "scenarios": [
@@ -69,7 +72,7 @@ def analyze():
                 "risk": round(max(0, risk_score - 25), 1) if risk_score > 50 else round(risk_score, 1),
                 "cost": f"${budget * 0.1:,.0f}"
             },
-            "explanation": f"The ML model analyzed your {domain} parameters and identified an intelligent complexity level of {complexity}. The resulting initial risk is {risk_score:.1f}%."
+            "explanation": f"The ML model analyzed your {domain} parameters for '{_title_str}' and identified an intelligent complexity level of {complexity}. The resulting initial risk is {risk_score:.1f}%."
         })
     except Exception as e:
         print(f"Analysis Error: {e}")
@@ -114,7 +117,70 @@ def get_pm_stats():
     stats = db_manager.get_pm_stats()
     return jsonify(stats)
 
-# Removed /api/ml/train for production-ready backend training
+@app.route('/api/sprint/monitor', methods=['GET'])
+def monitor_sprint():
+    sprint_id = request.args.get('sprint_id')
+    if not sprint_id:
+        return jsonify({"status": "error", "message": "sprint_id required"}), 400
+        
+    tasks = db_manager.get_tasks(sprint_id)
+    if not tasks:
+        return jsonify({"status": "stable", "message": "No tasks to monitor.", "risk": 0})
+        
+    total_tasks = len(tasks)
+    done_tasks = len([t for t in tasks if t.get('status') == 'Done'])
+    in_progress = len([t for t in tasks if t.get('status') == 'In Progress'])
+    
+    total_complexity = sum([int(t.get('complexity', 5)) for t in tasks])
+    avg_comp = total_complexity / total_tasks if total_tasks > 0 else 0
+    
+    if done_tasks == total_tasks:
+        return jsonify({"status": "complete", "message": "All tasks are complete!", "risk": 0})
+        
+    risk_score = 10.0
+    alerts = []
+    recommendation = "Maintain current velocity."
+    
+    if in_progress > 0 and avg_comp > 4:
+        risk_score += 40.0
+        alerts.append(f"High risk: {in_progress} complex tasks are bottlenecked in Progress.")
+        recommendation = "Recommend adding 2 developers to unblock 'In Progress' queue."
+    elif (total_tasks - done_tasks) > 5 and avg_comp > 6:
+        risk_score += 30.0
+        alerts.append("Timeline limit approaching due to high volume of complex remaining tasks.")
+        recommendation = "Consider extending the sprint timeline by 5 days."
+        
+    if risk_score >= 40:
+        return jsonify({"status": "warning", "message": " ".join(alerts), "recommendation": recommendation, "risk": risk_score})
+        
+    return jsonify({"status": "stable", "message": "Sprint is proceeding normally.", "recommendation": "Continue execution.", "risk": risk_score})
+
+@app.route('/api/ml/train/realtime', methods=['POST'])
+def train_realtime():
+    data = request.json
+    try:
+        team_size = int(data.get('team_size', 5))
+        project_complexity = int(data.get('project_complexity', 5))
+        estimated_days = int(data.get('estimated_days', 30))
+        actual_days = int(data.get('actual_days', 35))
+        budget = int(data.get('budget', 10000))
+        task_count = int(data.get('task_count', 10))
+        
+        csv_path = os.path.join(os.path.dirname(__file__), 'test_dataset.csv')
+        
+        # Append to CSV
+        with open(csv_path, 'a') as f:
+            f.write(f"\n{team_size},{project_complexity},{estimated_days},{actual_days},{budget},{task_count}")
+            
+        # Trigger Retrain
+        res = ml_model.train_model(csv_path)
+        
+        # Reload cache in global space immediately
+        ml_model._cached_model = ml_model.joblib.load(ml_model.MODEL_PATH)
+        
+        return jsonify({"status": "success", "message": "Model retrained with real-time data!", "details": res})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # --- Mock Persistence for Profile and Settings ---
 user_profile = {

@@ -114,10 +114,35 @@ export const DataProvider = ({ children }) => {
     } catch (err) { console.error(err); }
   }, [fetchSprints]);
 
+  const monitorSprint = useCallback(async (sprintId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/sprint/monitor?sprint_id=${sprintId}`);
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }, []);
+
+  const retrainAI = useCallback(async (sprintStats) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/ml/train/realtime`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sprintStats)
+      });
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }, []);
+
   return (
     <DataContext.Provider value={{ 
       projectData, isAnalyzing, analyzeData, error,
-      tasks, sprints, pmStats, fetchTasks, createTask, updateTaskStatus, fetchSprints, createSprint, fetchPmStats
+      tasks, sprints, pmStats, fetchTasks, createTask, updateTaskStatus, fetchSprints, createSprint, fetchPmStats,
+      monitorSprint, retrainAI
     }}>
       {children}
     </DataContext.Provider>
