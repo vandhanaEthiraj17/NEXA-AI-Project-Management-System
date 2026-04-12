@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from 'react';
 import { DataContext } from '../context/DataContext';
 import TaskCard from '../components/TaskCard';
 import TaskFormModal from '../components/TaskFormModal';
-import { Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, BarChart2, Sparkles } from 'lucide-react';
+import { Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, BarChart2, Sparkles, Circle } from 'lucide-react';
 
 const KanbanBoard = () => {
   const { 
@@ -19,6 +19,9 @@ const KanbanBoard = () => {
   const [monitorResult, setMonitorResult] = useState(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [hasTrained, setHasTrained] = useState(false);
+  
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [trainingStep, setTrainingStep] = useState(0);
 
   // Check complete lifecycle
   const isSprintComplete = tasks.length > 0 && tasks.every(t => t.status === 'Done');
@@ -31,15 +34,29 @@ const KanbanBoard = () => {
   };
 
   const handleDownloadReport = () => {
+    const totalComplexity = tasks.reduce((sum, t) => sum + parseInt(t.complexity || 5), 0);
+    const avgComplexity = totalComplexity / tasks.length || 5;
+
     const reportContent = `
-# Project Sprint Wrap-up Report
-**Sprint ID**: ${selectedSprintId}
-**Total Tasks Evaluated**: ${tasks.length}
+# Executive Sprint Wrap-up Report
+**Sprint ID**: ${selectedSprintId} | **Date**: ${new Date().toLocaleDateString()}
 **Status**: ✔️ Successfully Completed
 
-## Task Execution Detail
-${tasks.map(t => `- [x] **${t.title}** (Complexity: ${t.complexity})`).join('\n')}
+## Performance Overview
+- **Total Tasks Executed**: ${tasks.length}
+- **Average Complexity Evaluated**: ${avgComplexity.toFixed(1)}
+- **Velocity Tracking**: Sustained stable output throughout the cycle.
 
+## Task Execution Ledger
+| Status | Task Details | Final Complexity | Assignee |
+| :--- | :--- | :--- | :--- |
+${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.assignee || 'General'} |`).join('\n')}
+
+## AI Risk Retro-Analysis
+*Automated review of bottlenecks resolved during this cycle.*
+> High complexity tasks were managed appropriately. No critical path failures were fully realized due to active AI monitoring.
+
+---
 *This report verifies project milestones completion. The dataset metrics have been automatically formatted and prepared for immediate machine learning ingestion to perpetually calibrate internal Risk Models based on factual organizational cadence.*
     `.trim();
 
@@ -54,7 +71,13 @@ ${tasks.map(t => `- [x] **${t.title}** (Complexity: ${t.complexity})`).join('\n'
   };
 
   const handleTrainAI = async () => {
-    // Generate real-time stats
+    setShowTrainingModal(true);
+    setTrainingStep(0);
+    
+    // Step 1: Collect Metrics
+    await new Promise(r => setTimeout(r, 1200));
+    setTrainingStep(1);
+
     const totalComplexity = tasks.reduce((sum, t) => sum + parseInt(t.complexity || 5), 0);
     const avgComplexity = totalComplexity / tasks.length || 5;
     
@@ -71,12 +94,20 @@ ${tasks.map(t => `- [x] **${t.title}** (Complexity: ${t.complexity})`).join('\n'
       task_count: tasks.length
     };
 
+    // Step 2: Add to Dataset
+    await new Promise(r => setTimeout(r, 1200));
+    setTrainingStep(2);
+
+    // Step 3: Retrain the Model
     const res = await retrainAI(sprintStats);
+    await new Promise(r => setTimeout(r, 1200));
+    
     if(res && res.status === 'success') {
-      alert("AI ML-Engine Retrained with Real-Time Data!");
+      setTrainingStep(3); // Complete
       setHasTrained(true);
     } else {
       alert("Failed to retrain ML model directly.");
+      setShowTrainingModal(false);
     }
   };
 
@@ -300,11 +331,30 @@ ${tasks.map(t => `- [x] **${t.title}** (Complexity: ${t.complexity})`).join('\n'
       {/* Sprint Monitor Result */}
       {monitorResult && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
+          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '450px', padding: '2rem' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: monitorResult.status === 'warning' ? '#de350b' : '#00875a', marginBottom: '1rem', marginTop: 0 }}>
               <AlertTriangle /> AI Security & Risk Monitor
             </h3>
-            <p style={{ fontSize: '0.95rem', color: '#172b4d', marginBottom: '1.5rem', lineHeight: 1.5 }}>{monitorResult.message}</p>
+            <p style={{ fontSize: '0.95rem', color: '#172b4d', marginBottom: '1rem', lineHeight: 1.5 }}>{monitorResult.message}</p>
+            
+            {monitorResult.detailed_risks && monitorResult.detailed_risks.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                {monitorResult.detailed_risks.map((riskGroup, groupIdx) => (
+                  <div key={groupIdx} style={{ background: '#ffebe6', border: '1px solid #ffbdad', padding: '1rem', borderRadius: '6px' }}>
+                    <strong style={{ color: '#de350b', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                      {riskGroup.type}
+                    </strong>
+                    <p style={{ color: '#172b4d', fontSize: '0.8rem', margin: '0 0 0.5rem 0' }}>{riskGroup.message}</p>
+                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#bf2600', fontSize: '0.85rem' }}>
+                      {riskGroup.tasks.map((pt, idx) => (
+                        <li key={idx} style={{ marginBottom: '0.25rem' }}>{pt}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {monitorResult.recommendation && (
               <div style={{ background: '#f4f5f7', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#42526e' }}>
                 <strong style={{ color: '#172b4d', display: 'block', marginBottom: '0.25rem' }}>AI Required Execution:</strong>
@@ -363,6 +413,48 @@ ${tasks.map(t => `- [x] **${t.title}** (Complexity: ${t.complexity})`).join('\n'
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Real-Time ML Training Modal */}
+      {showTrainingModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: trainingStep >= 3 ? '#e3fcef' : '#deebff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', transition: 'all 0.5s' }}>
+              {trainingStep >= 3 ? <CheckCircle size={32} color="#00875a" /> : <Sparkles size={32} color="#0052cc" className={trainingStep < 3 ? "animate-spin" : ""} />}
+            </div>
+            
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#172b4d', margin: '0 0 1.5rem 0' }}>Real-time AI Learning</h2>
+            
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left', marginBottom: '2rem' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 0 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
+                {trainingStep > 0 ? <CheckCircle size={20} color="#00875a" /> : <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div>}
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 0 ? '#172b4d' : '#0052cc' }}>Collect final project metrics</span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 1 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
+                {trainingStep > 1 ? <CheckCircle size={20} color="#00875a" /> : trainingStep === 1 ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div> : <Circle size={20} color="#dfe1e6" />}
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 1 ? '#172b4d' : trainingStep === 1 ? '#0052cc' : '#5e6c84' }}>Add to AI Dataset</span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 2 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
+                {trainingStep > 2 ? <CheckCircle size={20} color="#00875a" /> : trainingStep === 2 ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div> : <Circle size={20} color="#dfe1e6" />}
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 2 ? '#172b4d' : trainingStep === 2 ? '#0052cc' : '#5e6c84' }}>Retrain Machine Learning Model</span>
+              </div>
+
+            </div>
+
+            {trainingStep >= 3 && (
+              <div className="animate-fade-in" style={{ width: '100%' }}>
+                <div style={{ background: '#e3fcef', border: '1px solid #79f2c0', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', color: '#006644', fontWeight: 600, fontSize: '0.9rem', lineHeight: 1.5 }}>
+                  “This allows the system to improve its predictions over time based on real-world data.”
+                </div>
+                <button className="btn-primary" style={{ width: '100%' }} onClick={() => setShowTrainingModal(false)}>Close Sequence</button>
+              </div>
+            )}
+
           </div>
         </div>
       )}

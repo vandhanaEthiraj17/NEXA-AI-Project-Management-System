@@ -13,6 +13,7 @@ import ProfilePage from './pages/ProfilePage';
 import { AppContext } from './context/AppContext';
 import { SettingsProvider } from './context/SettingsContext';
 import SettingsPage from './pages/SettingsPage';
+import ClientPortal from './pages/ClientPortal';
 
 const AppLayout = () => {
   const { domain } = useContext(AppContext);
@@ -47,6 +48,7 @@ function App() {
     <SettingsProvider>
       <Routes>
         <Route path="/login" element={!user ? <AuthPage /> : <Navigate to="/select-domain" />} />
+        <Route path="/client-portal" element={<ClientPortal />} />
         <Route path="/select-domain" element={user ? <DomainSelectionPage /> : <Navigate to="/login" />} />
         <Route path="/app/*" element={user ? <AppLayout /> : <Navigate to="/login" />} />
         <Route path="/" element={<Navigate to={user ? "/select-domain" : "/login"} replace />} />

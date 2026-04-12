@@ -124,25 +124,71 @@ export const DataProvider = ({ children }) => {
     }
   }, []);
 
-  const retrainAI = useCallback(async (sprintStats) => {
+  const retrainAI = useCallback(async (stats) => {
     try {
       const response = await fetch(`http://localhost:5000/api/ml/train/realtime`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sprintStats)
+        body: JSON.stringify(stats)
       });
       return await response.json();
     } catch (err) {
       console.error(err);
-      return null;
+      return { status: 'error', message: err.message };
     }
   }, []);
+
+  const submitBrief = useCallback(async (briefData) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/client/submit_brief`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(briefData)
+      });
+      return await response.json();
+    } catch (err) { console.error(err); return null; }
+  }, []);
+
+  const fetchBriefs = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/client/briefs`);
+      return await response.json();
+    } catch (err) { console.error(err); return null; }
+  }, []);
+
+  const generateProposal = useCallback(async (briefId, description) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/proposal/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief_id: briefId, project_description: description })
+      });
+      return await response.json();
+    } catch (err) { console.error(err); return null; }
+  }, []);
+
+  const approveProposal = useCallback(async (proposalId, tasks, clientName) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/proposal/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId, tasks, client_name: clientName })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        fetchSprints();
+        fetchPmStats();
+      }
+      return data;
+    } catch (err) { console.error(err); return null; }
+  }, [fetchSprints, fetchPmStats]);
 
   return (
     <DataContext.Provider value={{ 
       projectData, isAnalyzing, analyzeData, error,
       tasks, sprints, pmStats, fetchTasks, createTask, updateTaskStatus, fetchSprints, createSprint, fetchPmStats,
-      monitorSprint, retrainAI
+      monitorSprint, retrainAI,
+      submitBrief, fetchBriefs, generateProposal, approveProposal
     }}>
       {children}
     </DataContext.Provider>

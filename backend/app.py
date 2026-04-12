@@ -138,22 +138,44 @@ def monitor_sprint():
         return jsonify({"status": "complete", "message": "All tasks are complete!", "risk": 0})
         
     risk_score = 10.0
-    alerts = []
-    recommendation = "Maintain current velocity."
+    detailed_risks = []
     
-    if in_progress > 0 and avg_comp > 4:
-        risk_score += 40.0
-        alerts.append(f"High risk: {in_progress} complex tasks are bottlenecked in Progress.")
-        recommendation = "Recommend adding 2 developers to unblock 'In Progress' queue."
-    elif (total_tasks - done_tasks) > 5 and avg_comp > 6:
-        risk_score += 30.0
-        alerts.append("Timeline limit approaching due to high volume of complex remaining tasks.")
-        recommendation = "Consider extending the sprint timeline by 5 days."
-        
+    unassigned_tasks = [t for t in tasks if t.get('status') in ['To Do', 'In Progress'] and (not t.get('assignee') or t.get('assignee') == 'Unassigned')]
+    if unassigned_tasks:
+        risk_score += (10.0 * len(unassigned_tasks))
+        detailed_risks.append({
+            "type": "Unassigned Tasks",
+            "message": f"Found {len(unassigned_tasks)} pending tasks with no assignee.",
+            "tasks": [t.get('title', 'Unknown') for t in unassigned_tasks]
+        })
+
+    stuck_tasks = [t for t in tasks if t.get('status') == 'In Progress' and int(t.get('complexity', 5)) >= 6]
+    if stuck_tasks:
+        risk_score += (15.0 * len(stuck_tasks))
+        detailed_risks.append({
+            "type": "Bottlenecked in Progress",
+            "message": "High complexity tasks are stuck in execution.",
+            "tasks": [t.get('title', 'Unknown') for t in stuck_tasks]
+        })
+
+    deadline_risks = [t for t in tasks if t.get('status') != 'Done' and int(t.get('deadline_days', 7)) <= 2 and int(t.get('complexity', 5)) >= 5]
+    if deadline_risks:
+        risk_score += 20.0
+        detailed_risks.append({
+            "type": "Imminent Deadline",
+            "message": "Tasks nearing deadline with high remaining complexity.",
+            "tasks": [t.get('title', 'Unknown') for t in deadline_risks]
+        })
+
+    recommendation = "Maintain current velocity."
     if risk_score >= 40:
-        return jsonify({"status": "warning", "message": " ".join(alerts), "recommendation": recommendation, "risk": risk_score})
+        recommendation = "Immediate intervention required. Allocate devs to stuck tasks and assign unassigned items."
+        return jsonify({"status": "warning", "message": "Critical workflow bottlenecks detected.", "recommendation": recommendation, "risk": min(risk_score, 100), "detailed_risks": detailed_risks})
+    elif detailed_risks:
+        recommendation = "Monitor identified workflows to prevent delay."
+        return jsonify({"status": "warning", "message": "Minor workflow risks detected.", "recommendation": recommendation, "risk": min(risk_score, 100), "detailed_risks": detailed_risks})
         
-    return jsonify({"status": "stable", "message": "Sprint is proceeding normally.", "recommendation": "Continue execution.", "risk": risk_score})
+    return jsonify({"status": "stable", "message": "Sprint is proceeding normally.", "recommendation": "Continue execution.", "risk": risk_score, "detailed_risks": []})
 
 @app.route('/api/ml/train/realtime', methods=['POST'])
 def train_realtime():
@@ -217,6 +239,132 @@ def update_settings():
     data = request.json
     user_settings.update(data)
     return jsonify({"status": "success", "settings": user_settings})
+
+@app.route('/api/client/submit_brief', methods=['POST'])
+def submit_brief():
+    data = request.json
+    if not data or not data.get('client_name') or not data.get('project_description'):
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+    
+    brief_id = db_manager.create_client_brief(data)
+    return jsonify({"status": "success", "brief_id": brief_id})
+
+@app.route('/api/client/briefs', methods=['GET'])
+def get_briefs():
+    briefs = db_manager.get_client_briefs()
+    return jsonify({"status": "success", "briefs": briefs})
+
+@app.route('/api/proposal/generate', methods=['POST'])
+def generate_proposal():
+    data = request.json
+    brief_id = data.get('brief_id')
+    desc = data.get('project_description', '').lower()
+    
+    # Basic rudimentary NLP mapping rule-set for AI task generation
+    generated_tasks = [
+        {"title": "Initial Requirement & Architecture Documentation", "complexity": 3, "deadline_days": 3}
+    ]
+    
+    if "app" in desc or "mobile" in desc:
+        generated_tasks.extend([
+            {"title": "Mobile UX/UI Wireframing", "complexity": 4, "deadline_days": 5},
+            {"title": "iOS/Android Native Shell Configuration", "complexity": 6, "deadline_days": 7},
+            {"title": "Mobile App Store Deployment", "complexity": 5, "deadline_days": 2}
+        ])
+    if "web" in desc or "site" in desc or "platform" in desc:
+        generated_tasks.extend([
+            {"title": "Frontend React Structure", "complexity": 5, "deadline_days": 5},
+            {"title": "Web Responsive Design Layouts", "complexity": 4, "deadline_days": 4}
+        ])
+    if "database" in desc or "data" in desc or "backend" in desc:
+        generated_tasks.extend([
+            {"title": "Database Schema Design", "complexity": 7, "deadline_days": 5},
+            {"title": "Core API Routing Implementation", "complexity": 6, "deadline_days": 6}
+        ])
+        
+    generated_tasks.append({"title": "Final QA & Production Sign-off", "complexity": 4, "deadline_days": 3})
+    
+    estimated_cost = len(generated_tasks) * 2000
+    estimated_days = sum(t['deadline_days'] for t in generated_tasks)
+    
+    prop_id = db_manager.create_proposal({
+        "brief_id": brief_id,
+        "tasks": generated_tasks,
+        "estimated_cost": estimated_cost,
+        "estimated_days": estimated_days,
+        "status": "draft"
+    })
+    
+    return jsonify({"status": "success", "proposal_id": prop_id, "tasks": generated_tasks, "cost": estimated_cost, "days": estimated_days})
+
+@app.route('/api/proposal/approve', methods=['POST'])
+def approve_proposal():
+    data = request.json
+    prop_id = data.get('proposal_id')
+    tasks = data.get('tasks', [])
+    client_name = data.get('client_name', 'Client')
+    
+    if not prop_id:
+         return jsonify({"status": "error", "message": "proposal_id required"}), 400
+         
+    # Update proposal status
+    db_manager.update_proposal_status(prop_id, "approved")
+    
+    # Fetch all available developers for matching
+    available_devs = db_manager.get_developers()
+    
+    # Auto-generate active sprint from proposal!
+    sprint_id = db_manager.create_sprint(f"{client_name} - AI MVP Build")
+    for t in tasks:
+        title = t.get('title', '').lower()
+        matched_assignee = "Unassigned"
+        
+        # Skill-based matching logic
+        for dev in available_devs:
+            skills = dev.get('skills', '').split(',')
+            if any(skill in title for skill in skills):
+                matched_assignee = dev.get('name')
+                break
+        
+        db_manager.create_task({
+            "sprint_id": sprint_id,
+            "title": t.get('title'),
+            "description": "Auto-generated from Artificial Intelligence scoping engine.",
+            "complexity": t.get('complexity'),
+            "deadline_days": t.get('deadline_days'),
+            "status": "To Do",
+            "assignee": matched_assignee
+        })
+        
+    return jsonify({"status": "success", "message": "Proposal Confirmed. Resource Engine has matched Developers to tasks!", "sprint_id": sprint_id})
+
+@app.route('/api/developers', methods=['GET'])
+def get_developers():
+    devs = db_manager.get_developers()
+    return jsonify({"status": "success", "developers": devs})
+
+@app.route('/api/github/commits', methods=['GET'])
+def get_github_commits():
+    repo = request.args.get('repo', 'facebook/react') # Default for demo
+    url = f"https://api.github.com/repos/{repo}/commits?per_page=5"
+    try:
+        import requests
+        response = requests.get(url, timeout=5)
+        if response.ok:
+            commits = response.json()
+            formatted_commits = []
+            for c in commits:
+                formatted_commits.append({
+                    "sha": c['sha'][:7],
+                    "message": c['commit']['message'].split('\n')[0],
+                    "author": c['commit']['author']['name'],
+                    "date": c['commit']['author']['date']
+                })
+            return jsonify({"status": "success", "commits": formatted_commits})
+        else:
+            return jsonify({"status": "error", "message": "Failed to fetch from GitHub"}), 502
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

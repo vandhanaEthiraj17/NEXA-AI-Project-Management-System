@@ -38,6 +38,21 @@ class DatabaseManager:
         c = conn.cursor()
         c.execute('CREATE TABLE IF NOT EXISTS Sprints (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, status TEXT DEFAULT "active", start_date DATETIME DEFAULT CURRENT_TIMESTAMP, end_date DATETIME)')
         c.execute('CREATE TABLE IF NOT EXISTS Tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, sprint_id INTEGER, title TEXT NOT NULL, description TEXT, status TEXT DEFAULT "To Do", assignee TEXT, complexity INTEGER DEFAULT 5, deadline_days INTEGER DEFAULT 7, risk_score REAL)')
+        c.execute('CREATE TABLE IF NOT EXISTS ClientBriefs (id INTEGER PRIMARY KEY AUTOINCREMENT, client_name TEXT NOT NULL, project_description TEXT NOT NULL, budget INTEGER, timeline_weeks INTEGER, status TEXT DEFAULT "pending", created_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
+        c.execute('CREATE TABLE IF NOT EXISTS Proposals (id INTEGER PRIMARY KEY AUTOINCREMENT, brief_id INTEGER, tasks_json TEXT, estimated_cost INTEGER, estimated_days INTEGER, status TEXT DEFAULT "draft", created_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
+        c.execute('CREATE TABLE IF NOT EXISTS Developers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, skills TEXT, availability BOOLEAN DEFAULT 1)')
+        
+        # Seed Developers if none exist
+        count = conn.execute('SELECT COUNT(*) FROM Developers').fetchone()[0]
+        if count == 0:
+            devs = [
+                ('Alice Chen', 'react,frontend,css', 1),
+                ('Bob Smith', 'backend,database,python', 1),
+                ('Charlie Davis', 'mobile,ios,android', 1),
+                ('Diana Prince', 'qa,documentation,testing', 1)
+            ]
+            conn.executemany('INSERT INTO Developers (name, skills, availability) VALUES (?, ?, ?)', devs)
+        
         conn.commit()
         conn.close()
 
@@ -127,24 +142,94 @@ class DatabaseManager:
             return sprint_id
 
     def get_pm_stats(self):
+        try:
+            if self.use_mongodb:
+                tasks = list(self.mongo_db.tasks.find({}, {'status': 1, 'risk_score': 1}))
+            else:
+                conn = self.get_sqlite_conn()
+                tasks = conn.execute('SELECT status, risk_score FROM Tasks').fetchall()
+                conn.close()
+                tasks = [dict(t) for t in tasks]
+
+            total = len(tasks)
+            in_progress = sum(1 for t in tasks if t.get('status') == 'In Progress')
+            done = sum(1 for t in tasks if t.get('status') == 'Done')
+            high_risk = sum(1 for t in tasks if t.get('risk_score') is not None and t.get('risk_score', 0) > 70)
+            
+            return {
+                "total": total,
+                "inProgress": in_progress,
+                "done": done,
+                "highRisk": high_risk
+            }
+        except Exception as e:
+            print(f"Error in get_pm_stats: {e}")
+            return {"total": 0, "inProgress": 0, "done": 0, "highRisk": 0}
+
+    def create_client_brief(self, data):
         if self.use_mongodb:
-            tasks = list(self.mongo_db.tasks.find({}, {'status': 1, 'risk_score': 1}))
+            result = self.mongo_db.client_briefs.insert_one(data)
+            return str(result.inserted_id)
         else:
             conn = self.get_sqlite_conn()
-            tasks = conn.execute('SELECT status, risk_score FROM Tasks').fetchall()
+            cursor = conn.execute('INSERT INTO ClientBriefs (client_name, project_description, budget, timeline_weeks, status) VALUES (?, ?, ?, ?, ?)',
+                         (data.get('client_name'), data.get('project_description'), data.get('budget', 0), data.get('timeline_weeks', 0), data.get('status', 'pending')))
+            conn.commit()
+            brief_id = cursor.lastrowid
             conn.close()
-            tasks = [dict(t) for t in tasks]
+            return brief_id
 
-        total = len(tasks)
-        in_progress = sum(1 for t in tasks if t['status'] == 'In Progress')
-        done = sum(1 for t in tasks if t['status'] == 'Done')
-        high_risk = sum(1 for t in tasks if t['risk_score'] and t['risk_score'] > 70)
-        
-        return {
-            "total": total,
-            "inProgress": in_progress,
-            "done": done,
-            "highRisk": high_risk
-        }
+    def get_client_briefs(self):
+        if self.use_mongodb:
+            briefs = list(self.mongo_db.client_briefs.find())
+            for b in briefs:
+                b['id'] = str(b['_id'])
+                del b['_id']
+            return briefs
+        else:
+            conn = self.get_sqlite_conn()
+            briefs = conn.execute('SELECT * FROM ClientBriefs').fetchall()
+            conn.close()
+            return [dict(b) for b in briefs]
+
+    def create_proposal(self, data):
+        import json
+        if self.use_mongodb:
+            result = self.mongo_db.proposals.insert_one(data)
+            return str(result.inserted_id)
+        else:
+            conn = self.get_sqlite_conn()
+            tasks_json = json.dumps(data.get('tasks', []))
+            cursor = conn.execute('INSERT INTO Proposals (brief_id, tasks_json, estimated_cost, estimated_days, status) VALUES (?, ?, ?, ?, ?)',
+                         (data.get('brief_id'), tasks_json, data.get('estimated_cost', 0), data.get('estimated_days', 0), data.get('status', 'draft')))
+            conn.commit()
+            prop_id = cursor.lastrowid
+            conn.close()
+            return prop_id
+
+    def update_proposal_status(self, proposal_id, status):
+        from bson import ObjectId
+        if self.use_mongodb:
+            self.mongo_db.proposals.update_one({'_id': ObjectId(proposal_id)}, {'$set': {'status': status}})
+            return True
+        else:
+            conn = self.get_sqlite_conn()
+            conn.execute('UPDATE Proposals SET status = ? WHERE id = ?', (status, proposal_id))
+            conn.commit()
+            conn.close()
+            return True
+
+    def get_developers(self):
+        if self.use_mongodb:
+            devs = list(self.mongo_db.developers.find())
+            for d in devs:
+                d['id'] = str(d['_id'])
+                del d['_id']
+            return devs
+        else:
+            conn = self.get_sqlite_conn()
+            devs = conn.execute('SELECT * FROM Developers').fetchall()
+            conn.close()
+            return [dict(d) for d in devs]
 
 db_manager = DatabaseManager()

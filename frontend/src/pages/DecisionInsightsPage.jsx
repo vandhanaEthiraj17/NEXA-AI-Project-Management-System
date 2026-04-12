@@ -6,6 +6,20 @@ import { AppContext } from '../context/AppContext';
 import { DataContext } from '../context/DataContext';
 import { Info, CheckCircle, ShieldAlert, X, Mail, MessageCircle, Download, Share2 } from 'lucide-react';
 
+const TrendyTooltip = ({ active, payload, label, best_decision }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(8px)', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: '#172b4d' }}>{label}</p>
+        <p style={{ margin: '4px 0 0 0', fontWeight: 600, color: payload[0].payload.name === best_decision.name ? '#52c41a' : '#0052cc', fontSize: '0.85rem' }}>
+          Risk: {payload[0].value.toFixed(1)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DecisionInsightsPage = () => {
   const { domain } = useContext(AppContext);
   const { projectData: data } = useContext(DataContext);
@@ -28,20 +42,6 @@ const DecisionInsightsPage = () => {
     // Mock export handling
     alert(`Generating ${type} export...`);
     setShowExportModal(false);
-  };
-
-  const TrendyTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(8px)', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: '#172b4d' }}>{label}</p>
-          <p style={{ margin: '4px 0 0 0', fontWeight: 600, color: payload[0].payload.name === best_decision.name ? '#52c41a' : '#0052cc', fontSize: '0.85rem' }}>
-            Risk: {payload[0].value.toFixed(1)}%
-          </p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -80,7 +80,7 @@ const DecisionInsightsPage = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#5e6c84', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#5e6c84', fontSize: 12}} />
-                <Tooltip content={<TrendyTooltip />} />
+                <Tooltip content={<TrendyTooltip best_decision={best_decision} />} />
                 <Bar dataKey="risk" radius={[10, 10, 0, 0]} barSize={45}>
                   {scenarios.map((entry, index) => (
                     <Cell 
