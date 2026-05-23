@@ -10,9 +10,20 @@ import { AlertCircle, CheckCircle, TrendingDown, Info, UserPlus, Briefcase, Cale
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { domain } = useContext(AppContext);
-  const { projectData: data } = useContext(DataContext);
+  const { domain, user } = useContext(AppContext);
+  const { projectData: data, fetchBriefs } = useContext(DataContext);
   const [modalContent, setModalContent] = useState(null);
+  const [briefs, setBriefs] = useState([]);
+
+  React.useEffect(() => {
+    if (user?.role === 'manager') {
+      const getBriefs = async () => {
+        const res = await fetchBriefs();
+        if (res && res.status === 'success') setBriefs(res.briefs);
+      };
+      getBriefs();
+    }
+  }, [user, fetchBriefs]);
   
   if (!data) {
     return (
@@ -120,39 +131,33 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
-        {/* Scenario Ranking */}
-        <div className="card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#172b4d', marginBottom: '1.5rem' }}>Scenario Performance Analysis</h3>
-          <div style={{ width: '100%', height: '250px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scenarios}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ebecf0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="risk" radius={[4, 4, 0, 0]} barSize={30}>
-                  {scenarios.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.risk > 60 ? '#de350b' : '#0052cc'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+      {user?.role === 'manager' && briefs.length > 0 && (
+        <div style={{ marginTop: '2.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#172b4d', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Briefcase size={22} color="#0052cc" /> Incoming Client Requests
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            {briefs.map((brief) => (
+              <div key={brief.id} className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #0052cc', background: 'white' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#5e6c84', textTransform: 'uppercase', marginBottom: '0.5rem' }}>ID: BK-{brief.id}</div>
+                <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#172b4d', marginBottom: '0.5rem' }}>{brief.client_name}</div>
+                <p style={{ fontSize: '0.9rem', color: '#42526e', margin: '0 0 1.25rem 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {brief.project_description}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#00875a' }}>${brief.budget.toLocaleString()}</div>
+                    <button 
+                        onClick={() => navigate('/app/client-portal')}
+                        style={{ padding: '0.4rem 0.8rem', background: '#f4f5f7', border: '1px solid #dfe1e6', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                        Review Brief
+                    </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Dynamic Risk reasoning boxes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div className="card" style={{ padding: '1.5rem', borderLeft: `4px solid ${getRiskColor(risk_score)}`, flex: 1 }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', color: getRiskColor(risk_score), fontWeight: 700 }}>AI Risk Reasoning</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#42526e', lineHeight: 1.5 }}>{risk_reason}</p>
-          </div>
-          <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #00875a', flex: 1 }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', color: '#00875a', fontWeight: 700 }}>AI Success Drivers</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#42526e', lineHeight: 1.5 }}>{success_reason}</p>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Reasoning Modal */}
       {modalContent && (

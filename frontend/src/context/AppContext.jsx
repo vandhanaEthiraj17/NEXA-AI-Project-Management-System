@@ -12,12 +12,24 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('vds_domain') || null;
   });
 
-  const login = async (username) => {
-    // Simple mock login for now
-    const newUser = { username, id: 1 };
-    setUser(newUser);
-    localStorage.setItem('vds_user', JSON.stringify(newUser));
-    return true;
+  const login = async (username, password) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        const newUser = { username: data.username, role: data.role };
+        setUser(newUser);
+        localStorage.setItem('vds_user', JSON.stringify(newUser));
+        return { success: true, role: data.role };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Server unreachable' };
+    }
   };
 
   const logout = () => {

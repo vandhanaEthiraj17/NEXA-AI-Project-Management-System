@@ -41,6 +41,16 @@ class DatabaseManager:
         c.execute('CREATE TABLE IF NOT EXISTS ClientBriefs (id INTEGER PRIMARY KEY AUTOINCREMENT, client_name TEXT NOT NULL, project_description TEXT NOT NULL, budget INTEGER, timeline_weeks INTEGER, status TEXT DEFAULT "pending", created_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
         c.execute('CREATE TABLE IF NOT EXISTS Proposals (id INTEGER PRIMARY KEY AUTOINCREMENT, brief_id INTEGER, tasks_json TEXT, estimated_cost INTEGER, estimated_days INTEGER, status TEXT DEFAULT "draft", created_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
         c.execute('CREATE TABLE IF NOT EXISTS Developers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, skills TEXT, availability BOOLEAN DEFAULT 1)')
+        c.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT "user")')
+        
+        # Seed Users if none exist
+        count_users = conn.execute('SELECT COUNT(*) FROM Users').fetchone()[0]
+        if count_users == 0:
+            users = [
+                ('admin@enterprise.com', 'admin123', 'manager'),
+                ('client@test.com', 'client123', 'client')
+            ]
+            conn.executemany('INSERT INTO Users (username, password, role) VALUES (?, ?, ?)', users)
         
         # Seed Developers if none exist
         count = conn.execute('SELECT COUNT(*) FROM Developers').fetchone()[0]

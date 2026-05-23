@@ -30,11 +30,19 @@ const AuthPage = () => {
   const { login, user } = useContext(AppContext);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (username.trim()) {
-      login(username);
-      navigate('/select-domain');
+      const result = await login(username, password);
+      if (result.success) {
+        if (result.role === 'client') {
+          navigate('/app/client-portal');
+        } else {
+          navigate('/select-domain');
+        }
+      } else {
+        setAuthError(result.message || 'Invalid credentials');
+      }
     }
   };
 

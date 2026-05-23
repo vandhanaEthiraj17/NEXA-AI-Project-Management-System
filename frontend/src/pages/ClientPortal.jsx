@@ -1,11 +1,13 @@
 import React, { useState, useContext } from 'react';
 import { DataContext } from '../context/DataContext';
-import { Send, CheckCircle, FileText, ArrowRight, User, Briefcase, DollarSign, Clock } from 'lucide-react';
+import { AppContext } from '../context/AppContext';
+import { Send, CheckCircle, FileText, ArrowRight, User, Briefcase, DollarSign, Clock, History, Layout, Search } from 'lucide-react';
 
 const ClientPortal = () => {
-  const { submitBrief, generateProposal, approveProposal } = useContext(DataContext);
+  const { submitBrief, generateProposal, approveProposal, fetchBriefs } = useContext(DataContext);
+  const { user } = useContext(AppContext);
   
-  const [step, setStep] = useState(1); // 1: Submission, 2: AI Generating, 3: Review Proposal, 4: Confirmed
+  const [view, setView] = useState('new'); // 'new' or 'history'
   const [briefData, setBriefData] = useState({
     client_name: '',
     project_description: '',
@@ -55,12 +57,35 @@ const ClientPortal = () => {
         
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#172b4d', marginBottom: '1rem' }}>
-            VDS Client Portal
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#172b4d', marginBottom: '1.25rem' }}>
+            Enterprise Project Portal
           </h1>
-          <p style={{ fontSize: '1.1rem', color: '#5e6c84' }}>
-            Submit your requirements and let our AI architect your project in real-time.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <button 
+              onClick={() => setView('new')}
+              style={{ 
+                padding: '0.6rem 1.25rem', borderRadius: '8px', border: 'none',
+                background: view === 'new' ? '#0052cc' : 'white',
+                color: view === 'new' ? 'white' : '#172b4d',
+                fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                display: 'flex', alignItems: 'center', gap: '0.5rem'
+              }}
+            >
+              <Send size={16} /> New Engagement
+            </button>
+            <button 
+              onClick={() => setView('history')}
+              style={{ 
+                padding: '0.6rem 1.25rem', borderRadius: '8px', border: 'none',
+                background: view === 'history' ? '#0052cc' : 'white',
+                color: view === 'history' ? 'white' : '#172b4d',
+                fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                display: 'flex', alignItems: 'center', gap: '0.5rem'
+              }}
+            >
+              <History size={16} /> Active Projects
+            </button>
+          </div>
         </div>
 
         {/* Step Progress */}
@@ -83,7 +108,7 @@ const ClientPortal = () => {
         {/* Main Card */}
         <div className="card" style={{ padding: '3rem', background: 'white', borderRadius: '12px', boxShadow: '0 8px 24px rgba(9, 30, 66, 0.08)' }}>
           
-          {step === 1 && (
+          {view === 'new' && step === 1 && (
             <form onSubmit={handleSubmitBrief} className="animate-fade-in">
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '2rem', color: '#172b4d' }}>Project Brief</h2>
               
@@ -217,15 +242,54 @@ const ClientPortal = () => {
               </div>
               <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: '#172b4d' }}>Project Confirmed!</h2>
               <p style={{ color: '#5e6c84', fontSize: '1.1rem', marginBottom: '2.5rem' }}>
-                We've automatically initialized your Scrum Sprint and assigned the AI-generated tasks to the board. Your implementation phase begins now.
+                Your project has been successfully funneled into the AI Resource Matcher.
               </p>
               <button 
-                onClick={() => window.location.href = '/app/kanban'} 
+                onClick={() => setView('history')} 
                 className="btn-primary" 
                 style={{ padding: '1rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}
               >
-                Go to Project Dashboard <ArrowRight size={20} />
+                Track Progress in Dashboard <ArrowRight size={20} />
               </button>
+            </div>
+          )}
+
+          {view === 'history' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#172b4d' }}>Your Active Engagements</h2>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#a5adba' }} />
+                  <input type="text" placeholder="Search projects..." style={{ padding: '0.5rem 1rem 0.5rem 2.2rem', borderRadius: '6px', border: '1px solid #dfe1e6', fontSize: '0.9rem' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {[
+                  { name: "Global Supply Chain AI", status: "In Execution", progress: 65, manager: "Alice Chen" },
+                  { name: "Enterprise Auth Migration", status: "Scoping", progress: 15, manager: "System AI" }
+                ].map((proj, i) => (
+                  <div key={i} className="card" style={{ padding: '1.5rem', border: '1px solid #dfe1e6', borderRadius: '12px', background: 'white' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div>
+                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#172b4d' }}>{proj.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#5e6c84' }}>Managed by: {proj.manager}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ padding: '0.2rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 700, background: '#ebf5ff', color: '#0052cc' }}>{proj.status}</span>
+                            <div style={{ fontSize: '0.8rem', color: '#00875a', fontWeight: 700, marginTop: '0.25rem' }}>On Track</div>
+                        </div>
+                    </div>
+                    <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#5e6c84', fontWeight: 600 }}>Implementation Progress</span>
+                        <span style={{ color: '#172b4d', fontWeight: 700 }}>{proj.progress}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', background: '#f4f5f7', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${proj.progress}%`, height: '100%', background: '#0052cc', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

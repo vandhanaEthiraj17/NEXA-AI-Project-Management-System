@@ -7,23 +7,33 @@ import {
   Activity,
   LogOut,
   RefreshCw,
-  Play
+  Play,
+  Users,
+  BarChart3,
+  Globe
 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
-  const { domain, logout } = useContext(AppContext);
+  const { domain, logout, user } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const role = user?.role || 'manager';
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/app/dashboard' },
-    { id: 'kanban', label: 'Active Sprint', icon: <Play size={18} />, path: '/app/kanban' },
-    { id: 'analysis', label: 'New Analysis', icon: <PlusSquare size={18} />, path: '/app/analysis' },
-    { id: 'simulation', label: 'Simulation Panel', icon: <SlidersHorizontal size={18} />, path: '/app/simulation' },
-    { id: 'insights', label: 'Decision Insights', icon: <Lightbulb size={18} />, path: '/app/insights' }
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/app/dashboard', roles: ['manager'] },
+    { id: 'kanban', label: 'Active Sprint', icon: <Play size={18} />, path: '/app/kanban', roles: ['manager'] },
+    { id: 'resource-allocation', label: 'Resource Map', icon: <Users size={18} />, path: '/app/resource-allocation', roles: ['manager'] },
+    { id: 'analytics', label: 'Enterprise Analytics', icon: <BarChart3 size={18} />, path: '/app/analytics', roles: ['manager'] },
+    { id: 'client-portal', label: 'Project Portal', icon: <Globe size={18} />, path: '/app/client-portal', roles: ['client', 'manager'] },
+    { id: 'analysis', label: 'New Analysis', icon: <PlusSquare size={18} />, path: '/app/analysis', roles: ['manager'] },
+    { id: 'simulation', label: 'Simulation Panel', icon: <SlidersHorizontal size={18} />, path: '/app/simulation', roles: ['manager'] },
+    { id: 'insights', label: 'Decision Insights', icon: <Lightbulb size={18} />, path: '/app/insights', roles: ['manager'] }
   ];
+
+  const filteredItems = navItems.filter(item => item.roles.includes(role));
 
   const handleLogout = () => {
     logout();
@@ -46,7 +56,7 @@ const Sidebar = () => {
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {navItems.map((item) => (
+        {filteredItems.map((item) => (
           <div 
             key={item.id}
             className={`nav-item ${location.pathname.includes(item.id) ? 'active' : ''}`}
