@@ -1,108 +1,105 @@
-Step 1: User Interaction (Frontend Layer)
-👤 Actor:
+🚀 AXIONET 
 
-Project Manager
+AI-Powered Project Management & Decision Intelligence System
 
-📥 Input:
-Number of tasks
+🧠 Workflow
+👤 Step 1: User Input
+
+Project manager enters:
+
 Team size
-Project deadline
-Task complexity
-⚙️ Tech Used:
-HTML / CSS / JavaScript (or React)
+Deadline
+Budget
+Complexity
+Task count
+⚙️ Frontend
 
-👉 What happens:
+Built using:
 
-User fills a form
-Clicks “Analyze Project”
-🔗 Step 2: API Request (Frontend → Backend)
-⚙️ Tech Used:
-REST API (Fetch / Axios)
+React (Vite)
+HTML/CSS/JavaScript
+🔗 Step 2: API Request
 
-👉 What happens:
+Frontend sends data to backend using:
 
-Data is converted to JSON
-Sent to backend endpoint:
-POST /predict
-⚙️ Step 3: Backend Processing (Core Logic Layer)
-⚙️ Tech Used:
-Python (Flask) OR Node.js
+REST API
+Fetch / Axios
+POST /api/analyze
+⚙️ Step 3: Backend Processing
 
-👉 What happens:
+Backend built using:
 
-Input validation
-Data formatting
-Calls AI module
-🧠 Step 4: AI Prediction Engine
-⚙️ Tech Used:
-Scikit-learn / TensorFlow
+Python
+Flask
+Backend Tasks:
+Validate input
+Process data
+Send to AI engine
+🧠 Step 4: AI Prediction
+
+AI model built using:
+
+Scikit-learn
+Random Forest
 Pandas / NumPy
-🔍 Process:
-Load trained model
-Convert input into model format
-Predict delay probability
+AI Predicts:
+Risk level
+Delay probability
+Success chance
+🔄 Step 5: Simulation Engine
 
-👉 Output:
+System tests different scenarios.
 
-Delay Risk = 72%
-🔄 Step 5: Simulation Engine (Key Feature 🔥)
-⚙️ Tech Used:
-Python logic + ML model
-💡 What happens:
-👥 Team Simulation
-Try different team sizes
-Find lowest delay risk
-⏱️ Timeline Simulation
-Adjust deadline
-Measure impact
-
-👉 Example:
-
-Team 3 → Risk 70%
-Team 5 → Risk 30% ✅
-🧠 Step 6: Decision Logic Engine
-⚙️ Tech Used:
-Rule-based logic (Python)
-
-👉 What happens:
-
-Compares all scenarios
-Selects BEST option
-
-👉 Final Output:
-
+Example:
+Team Size 3 → High Risk
+Team Size 5 → Low Risk
+Final Suggestion:
 Best team size
-Optimal timeline
+Better timeline
 Risk reduction
-🗄️ Step 7: Database Storage
-⚙️ Tech Used:
-SQLite / PostgreSQL / MongoDB
-📦 Stored Data:
-User inputs
+📁 Step 6: Project Management
+
+Workflow similar to Jira:
+
+Backlog → To Do → In Progress → Testing → Done
+🗄️ Step 7: Database
+
+Used:
+
+MongoDB
+SQLite
+Joblib
+
+Stores:
+
+Tasks
+Sprints
 Predictions
-Results
+AI models
+📊 Step 8: Dashboard
 
-👉 Purpose:
+Displays:
 
-Future learning
-Model improvement
-📊 Step 8: Response to Frontend
-⚙️ Tech Used:
-JSON response
-
-👉 Backend sends:
-
-{
-  "delay_risk": "72%",
-  "recommended_team": 5,
-  "optimized_days": 24
-}
-📈 Step 9: Visualization Dashboard
-⚙️ Tech Used:
-Chart.js / JavaScript
-
-👉 Display:
-
-📊 Risk percentage
-👥 Team recommendation
-⏱️ Timeline suggestion
+Risk score
+Recommendations
+Charts
+Project insights
+🔥 Main Features
+AI Risk Prediction
+Decision Intelligence
+Sprint Management
+Task Tracking
+Scenario Simulation
+Resource Suggestions
+⚙️ Tech Stack
+Frontend
+React (Vite)
+Backend
+Flask (Python)
+AI/ML
+Scikit-learn
+Pandas
+NumPy
+Database
+MongoDB
+SQLite
