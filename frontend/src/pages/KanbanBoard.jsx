@@ -2,7 +2,9 @@ import React, { useEffect, useContext, useState } from 'react';
 import { DataContext } from '../context/DataContext';
 import TaskCard from '../components/TaskCard';
 import TaskFormModal from '../components/TaskFormModal';
-import { Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, BarChart2, Sparkles, Circle } from 'lucide-react';
+import { Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, BarChart2, Sparkles, Circle, Download, ShieldAlert, Cpu } from 'lucide-react';
+import GlassCard from '../components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const KanbanBoard = () => {
   const { 
@@ -135,52 +137,61 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
   const activeSprint = sprints.find(s => s.id === parseInt(selectedSprintId));
 
   const columns = [
-    { id: 'To Do', icon: <ListTodo size={18} />, color: '#5e6c84' },
-    { id: 'In Progress', icon: <Play size={18} />, color: '#0052cc' },
-    { id: 'Done', icon: <CheckCircle size={18} />, color: '#00875a' }
+    { id: 'To Do', icon: <ListTodo size={15} />, color: 'text-slate-400', border: 'border-t-slate-500/30' },
+    { id: 'In Progress', icon: <Play size={15} />, color: 'text-neon-purple', border: 'border-t-neon-purple/30' },
+    { id: 'Done', icon: <CheckCircle size={15} />, color: 'text-emerald-400', border: 'border-t-emerald-500/30' }
   ];
 
   return (
-    <div className="animate-fade-in" style={{ padding: '0.5rem' }}>
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
+    <div className="space-y-6 select-none">
+      {/* Page Header */}
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 pb-4 border-b border-white/5">
         <div>
-          <h1 className="page-title">AI Project Management</h1>
-          <p className="page-subtitle">Real-time risk tracking and agile task management powered by Machine Learning.</p>
+          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+            <Layout className="text-neon-purple" size={24} />
+            Agile Operations Control
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Predictive Agile project oversight and workload risk mapping.
+          </p>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-stretch sm:items-end">
+          <div className="flex gap-2">
             <select 
-              className="form-control" 
-              style={{ width: '200px' }}
               value={selectedSprintId || ''}
               onChange={(e) => setSelectedSprintId(e.target.value)}
+              className="bg-black/45 border border-white/5 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer focus:border-neon-purple/50 font-sans"
             >
               {sprints.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.status})</option>
+                <option key={s.id} value={s.id} className="bg-bg-deep text-white">{s.name} ({s.status.toUpperCase()})</option>
               ))}
             </select>
-            <button className="btn-primary" onClick={() => setShowTaskModal(true)}>
-              <Plus size={18} />
-              Add Task
+            
+            <button 
+              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center gap-1.5 shrink-0"
+              onClick={() => setShowTaskModal(true)}
+            >
+              <Plus size={16} />
+              Add Task Spec
             </button>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          
+          <div className="flex gap-2">
             <button 
-              className="btn-secondary" 
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
               onClick={handleMonitorSprint}
               disabled={isMonitoring}
             >
-              <AlertTriangle size={14} color="#de350b" /> {isMonitoring ? 'Scanning...' : 'Monitor Risks'}
+              <AlertTriangle size={14} className="text-rose-400" />
+              {isMonitoring ? 'Scanning...' : 'Monitor Risks'}
             </button>
             <button 
-              className="btn-secondary" 
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #cce4ff', background: '#f0f7ff', color: '#0052cc' }}
+              className="bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/20 hover:border-neon-cyan/40 text-neon-cyan font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
               onClick={() => setShowAISuggestions(true)}
             >
-              <Sparkles size={16} color="#0052cc" />
-              Add task from AI suggestion
+              <Sparkles size={14} />
+              Add from AI Suggestions
             </button>
           </div>
         </div>
@@ -188,139 +199,113 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
 
       {/* Stats Overview */}
       {pmStats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #0052cc' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#5e6c84', fontWeight: 600 }}>Total Tasks</span>
-              <BarChart2 size={18} color="#0052cc" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <GlassCard className="py-3 px-4 border-l-2 border-l-slate-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+              <span>Sprint Scope</span>
+              <BarChart2 size={14} />
             </div>
-            <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', fontWeight: 700 }}>{pmStats.total}</h2>
-          </div>
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #de350b' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#5e6c84', fontWeight: 600 }}>High Risk</span>
-              <AlertTriangle size={18} color="#de350b" />
+            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{pmStats.total}</h2>
+          </GlassCard>
+          <GlassCard className="py-3 px-4 border-l-2 border-l-rose-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+              <span>Risk Warning</span>
+              <AlertTriangle size={14} className="text-rose-500 animate-pulse" />
             </div>
-            <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', fontWeight: 700 }}>{pmStats.highRisk}</h2>
-          </div>
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #ffab00' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#5e6c84', fontWeight: 600 }}>In Progress</span>
-              <Play size={18} color="#ffab00" />
+            <h2 className="text-2xl font-extrabold font-mono text-rose-400 mt-1">{pmStats.highRisk}</h2>
+          </GlassCard>
+          <GlassCard className="py-3 px-4 border-l-2 border-l-neon-purple">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+              <span>In Flight</span>
+              <Play size={14} className="text-neon-purple" />
             </div>
-            <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', fontWeight: 700 }}>{pmStats.inProgress}</h2>
-          </div>
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #00875a' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#5e6c84', fontWeight: 600 }}>Done</span>
-              <CheckCircle size={18} color="#00875a" />
+            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{pmStats.inProgress}</h2>
+          </GlassCard>
+          <GlassCard className="py-3 px-4 border-l-2 border-l-emerald-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+              <span>Resolved</span>
+              <CheckCircle size={14} className="text-emerald-500" />
             </div>
-            <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', fontWeight: 700 }}>{pmStats.done}</h2>
-          </div>
+            <h2 className="text-2xl font-extrabold font-mono text-emerald-400 mt-1">{pmStats.done}</h2>
+          </GlassCard>
         </div>
       )}
 
-      {/* Sprint Complete Block */}
+      {/* Completed Sprint Retraining Loop */}
       {isSprintComplete && (
-        <div className="animate-scale-in" style={{ background: 'linear-gradient(135deg, #00875a 0%, #00a36c 100%)', color: 'white', padding: '2rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0, 135, 90, 0.2)' }}>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent border border-emerald-500/20 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl"
+        >
           <div>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0, fontSize: '1.5rem', color: 'white' }}>
-              <CheckCircle size={28} /> Sprint Officially Completed
-            </h2>
-            <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>All {tasks.length} tasks have been securely closed and verified.</p>
+            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+              <CheckCircle size={20} className="text-emerald-400" />
+              Sprint Phase Completed Successfully
+            </h3>
+            <p className="text-slate-400 text-xs mt-1">All {tasks.length} task specs are resolved. Retrain the model on actual delivery variance.</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="flex gap-2 w-full md:w-auto">
             <button 
-              className="btn-secondary" 
-              style={{ background: 'white', color: '#00875a', border: 'none', fontWeight: 600 }}
+              className="flex-1 md:flex-none bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-white/10 text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1.5 font-mono uppercase"
               onClick={handleDownloadReport}
             >
-              Download Report
+              <Download size={14} />
+              Sprint Report
             </button>
             <button 
-              className="btn-primary" 
-              style={{ background: hasTrained ? '#006644' : '#172b4d', border: 'none', opacity: hasTrained ? 0.7 : 1, transition: 'all 0.3s' }}
+              className={`flex-1 md:flex-none text-white font-bold text-xs py-2.5 px-5 rounded-xl cursor-pointer transition-all duration-300 font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 ${
+                hasTrained 
+                  ? 'bg-emerald-600/20 border border-emerald-600/30 text-emerald-300 pointer-events-none' 
+                  : 'bg-neon-purple hover:bg-neon-purple/80 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+              }`}
               onClick={handleTrainAI}
               disabled={hasTrained}
             >
-              {hasTrained ? 'AI Updated ✓' : 'Feed Result to Train AI'}
+              <Cpu size={14} />
+              {hasTrained ? 'Neural Cache Updated ✓' : 'Ingest Retraining Model'}
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Kanban Board */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '1.5rem',
-        minHeight: '60vh'
-      }}>
-        {columns.map(col => (
-          <div key={col.id} style={{ 
-            background: '#ebecf0', 
-            borderRadius: '6px', 
-            padding: '0.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.75rem', 
-              padding: '0.5rem', 
-              marginBottom: '0.25rem',
-              color: col.color,
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05rem'
-            }}>
-              {col.icon}
-              {col.id}
-              <span style={{ 
-                marginLeft: 'auto', 
-                background: '#dfe1e6', 
-                color: '#172b4d', 
-                padding: '2px 8px', 
-                borderRadius: '10px',
-                fontSize: '0.75rem' 
-              }}>
-                {tasks.filter(t => t.status === col.id).length}
-              </span>
-            </div>
-            
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto',
-              maxHeight: 'calc(100vh - 400px)'
-            }}>
-              {tasks.filter(t => t.status === col.id).map(task => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
-                  onStatusChange={handleStatusChange}
-                />
-              ))}
-              
-              {tasks.filter(t => t.status === col.id).length === 0 && (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem', 
-                  border: '2px dashed #dfe1e6', 
-                  borderRadius: '6px',
-                  color: '#97a0af',
-                  fontSize: '0.85rem'
-                }}>
-                  No tasks here
+      {/* Columns Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start min-h-[55vh]">
+        {columns.map(col => {
+          const colTasks = tasks.filter(t => t.status === col.id);
+          return (
+            <div key={col.id} className="glass-panel p-4 rounded-2xl flex flex-col gap-3 h-full max-h-[70vh] border-t-2 overflow-hidden bg-white/[0.01]">
+              {/* Column Header */}
+              <div className="flex justify-between items-center pb-2 border-b border-white/5 font-mono font-bold text-[10px] tracking-wider uppercase">
+                <div className={`flex items-center gap-1.5 ${col.color}`}>
+                  {col.icon}
+                  <span>{col.id}</span>
                 </div>
-              )}
+                <span className="bg-white/[0.04] text-slate-400 border border-white/5 px-2 py-0.5 rounded-full font-mono text-[9px]">{colTasks.length}</span>
+              </div>
+              
+              {/* Task list container */}
+              <div className="flex-1 overflow-y-auto pr-1">
+                {colTasks.map(task => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+                
+                {colTasks.length === 0 && (
+                  <div className="text-center py-12 border border-dashed border-white/5 rounded-xl text-slate-600 text-xs font-sans">
+                    No active processes here
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
+      {/* Task Modal Trigger */}
       {showTaskModal && (
         <TaskFormModal 
           onClose={() => setShowTaskModal(false)} 
@@ -328,72 +313,101 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
         />
       )}
 
-      {/* Sprint Monitor Result */}
-      {monitorResult && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '450px', padding: '2rem' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: monitorResult.status === 'warning' ? '#de350b' : '#00875a', marginBottom: '1rem', marginTop: 0 }}>
-              <AlertTriangle /> AI Security & Risk Monitor
-            </h3>
-            <p style={{ fontSize: '0.95rem', color: '#172b4d', marginBottom: '1rem', lineHeight: 1.5 }}>{monitorResult.message}</p>
-            
-            {monitorResult.detailed_risks && monitorResult.detailed_risks.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                {monitorResult.detailed_risks.map((riskGroup, groupIdx) => (
-                  <div key={groupIdx} style={{ background: '#ffebe6', border: '1px solid #ffbdad', padding: '1rem', borderRadius: '6px' }}>
-                    <strong style={{ color: '#de350b', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                      {riskGroup.type}
-                    </strong>
-                    <p style={{ color: '#172b4d', fontSize: '0.8rem', margin: '0 0 0.5rem 0' }}>{riskGroup.message}</p>
-                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#bf2600', fontSize: '0.85rem' }}>
-                      {riskGroup.tasks.map((pt, idx) => (
-                        <li key={idx} style={{ marginBottom: '0.25rem' }}>{pt}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* Sprint Monitor Warnings Modal */}
+      <AnimatePresence>
+        {monitorResult && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1300] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[460px] p-6 border border-white/10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
+              <h3 className="font-bold text-white text-sm tracking-wide uppercase font-mono flex items-center gap-1.5 text-rose-400 mb-3">
+                <ShieldAlert size={18} />
+                Risk Diagnostic Pulse
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed font-sans mb-4">{monitorResult.message}</p>
+              
+              {monitorResult.detailed_risks && monitorResult.detailed_risks.length > 0 && (
+                <div className="space-y-3 mb-5 max-h-48 overflow-y-auto">
+                  {monitorResult.detailed_risks.map((riskGroup, idx) => (
+                    <div key={idx} className="bg-rose-950/20 border border-rose-900/30 p-3.5 rounded-xl">
+                      <strong className="text-rose-400 text-[10px] uppercase font-mono tracking-wider block mb-1">{riskGroup.type}</strong>
+                      <p className="text-slate-400 text-[10px] leading-relaxed mb-2 font-sans">{riskGroup.message}</p>
+                      <ul className="list-disc pl-4 text-xs text-rose-300 space-y-1 font-mono text-[10px]">
+                        {riskGroup.tasks.map((pt, taskIdx) => (
+                          <li key={taskIdx}>{pt}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {monitorResult.recommendation && (
-              <div style={{ background: '#f4f5f7', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#42526e' }}>
-                <strong style={{ color: '#172b4d', display: 'block', marginBottom: '0.25rem' }}>AI Required Execution:</strong>
-                {monitorResult.recommendation}
-              </div>
-            )}
-            <button className="btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center' }} onClick={() => setMonitorResult(null)}>Acknowledge Threat Level</button>
+              {monitorResult.recommendation && (
+                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl mb-5 text-[11px] text-slate-400 leading-relaxed">
+                  <strong className="text-white block mb-0.5 text-[10px] uppercase font-mono">Suggested Mitigation Plan:</strong>
+                  {monitorResult.recommendation}
+                </div>
+              )}
+              
+              <button 
+                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-2.5 rounded-xl cursor-pointer transition-colors font-mono uppercase tracking-wider"
+                onClick={() => setMonitorResult(null)}
+              >
+                Dismiss Diagnostics
+              </button>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* AI Suggestion Modal */}
-      {showAISuggestions && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#172b4d' }}>
-                <Sparkles color="#0052cc" size={20} /> AI Task Suggestions
-              </h2>
-              <button onClick={() => setShowAISuggestions(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5e6c84' }}>Close</button>
-            </div>
-
-            {!projectData ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#5e6c84', border: '2px dashed #dfe1e6', borderRadius: '8px' }}>
-                <p>No AI Analysis found. Head to "New Analysis" first to generate actionable insights, then return here to add them!</p>
+      {/* AI Task Suggestion Modal */}
+      <AnimatePresence>
+        {showAISuggestions && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[480px] p-6 border border-white/10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-sm font-bold text-white tracking-wide uppercase font-mono flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-neon-cyan" />
+                  AI Suggested Actions
+                </h2>
+                <button onClick={() => setShowAISuggestions(false)} className="text-slate-400 hover:text-white p-1 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+                  <X size={18} />
+                </button>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ fontSize: '0.85rem', color: '#5e6c84', marginBottom: '0.25rem' }}>The AI model analyzed your project and recommends adding these strategic tasks to your active sprint:</p>
-                
-                {[
-                  { title: `Action: ${projectData.metrics.recommended_action}`, desc: 'Implement the AI structural resource adjustment.', complexity: 8 },
-                  { title: `Risk Mitigation (${projectData.metrics.risk_score}% exposure)`, desc: projectData.metrics.risk_reason, complexity: 9 },
-                  { title: `Apply Strategy: ${projectData.best_decision.name}`, desc: `Optimize project trajectory using the lowest risk scenario plan. Cost parameter: ${projectData.best_decision.cost}`, complexity: 5 }
-                ].map((sug, i) => (
-                  <div key={i} style={{ border: '1px solid #dfe1e6', borderRadius: '8px', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s', background: '#f8f9fa' }}
-                       onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
-                       onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
-                       onClick={() => {
+
+              {!projectData ? (
+                <div className="text-center py-8 text-slate-500 space-y-3">
+                  <p className="text-xs">No active Simulation Scan found.</p>
+                  <button 
+                    onClick={() => { setShowAISuggestions(false); navigate('/app/analysis'); }}
+                    className="bg-neon-purple hover:bg-neon-purple/80 text-white text-xs font-semibold py-2 px-4 rounded-lg cursor-pointer"
+                  >
+                    Launch Simulation Scan
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">Based on current timeline parameters, I recommend injecting these tasks directly into the active sprint backlog:</p>
+                  
+                  <div className="space-y-2.5">
+                    {[
+                      { title: `Action: ${projectData.metrics.recommended_action}`, desc: 'Implement the AI structural resource adjustment.', complexity: 8 },
+                      { title: `Mitigation Plan (${projectData.metrics.risk_score}% exposure)`, desc: projectData.metrics.risk_reason, complexity: 9 },
+                      { title: `Apply Strategy: ${projectData.best_decision.name}`, desc: `Optimize project trajectory using the lowest risk scenario plan. Cost parameter: ${projectData.best_decision.cost}`, complexity: 5 }
+                    ].map((sug, i) => (
+                      <div 
+                        key={i} 
+                        onClick={() => {
                           createTask({
                             title: sug.title.substring(0, 60),
                             description: sug.desc,
@@ -404,78 +418,107 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
                             status: 'To Do'
                           });
                           setShowAISuggestions(false);
-                       }}
-                  >
-                    <div style={{ fontWeight: 600, color: '#172b4d', marginBottom: '0.25rem' }}>{sug.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#5e6c84' }}>{sug.desc}</div>
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#0052cc', fontWeight: 600 }}>+ Add Task to Sprint</div>
+                        }}
+                        className="p-3 border border-white/5 hover:border-neon-cyan/40 bg-black/45 hover:bg-black/60 rounded-xl cursor-pointer transition-all group"
+                      >
+                        <div className="font-semibold text-white text-xs mb-1 group-hover:text-neon-cyan transition-colors">{sug.title}</div>
+                        <div className="text-[11px] text-slate-400 leading-relaxed font-sans">{sug.desc}</div>
+                        <div className="mt-2.5 text-[9px] font-bold font-mono text-neon-cyan flex items-center gap-1 uppercase tracking-wider">+ INJECT TO BACKLOG</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Real-Time ML Training Modal */}
-      {showTrainingModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: trainingStep >= 3 ? '#e3fcef' : '#deebff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', transition: 'all 0.5s' }}>
-              {trainingStep >= 3 ? <CheckCircle size={32} color="#00875a" /> : <Sparkles size={32} color="#0052cc" className={trainingStep < 3 ? "animate-spin" : ""} />}
-            </div>
-            
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#172b4d', margin: '0 0 1.5rem 0' }}>Real-time AI Learning</h2>
-            
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left', marginBottom: '2rem' }}>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 0 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
-                {trainingStep > 0 ? <CheckCircle size={20} color="#00875a" /> : <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div>}
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 0 ? '#172b4d' : '#0052cc' }}>Collect final project metrics</span>
-              </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 1 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
-                {trainingStep > 1 ? <CheckCircle size={20} color="#00875a" /> : trainingStep === 1 ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div> : <Circle size={20} color="#dfe1e6" />}
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 1 ? '#172b4d' : trainingStep === 1 ? '#0052cc' : '#5e6c84' }}>Add to AI Dataset</span>
-              </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: trainingStep >= 2 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
-                {trainingStep > 2 ? <CheckCircle size={20} color="#00875a" /> : trainingStep === 2 ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #0052cc', borderTopColor: 'transparent' }} className="animate-spin"></div> : <Circle size={20} color="#dfe1e6" />}
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: trainingStep > 2 ? '#172b4d' : trainingStep === 2 ? '#0052cc' : '#5e6c84' }}>Retrain Machine Learning Model</span>
-              </div>
-
-            </div>
-
-            {trainingStep >= 3 && (
-              <div className="animate-fade-in" style={{ width: '100%' }}>
-                <div style={{ background: '#e3fcef', border: '1px solid #79f2c0', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', color: '#006644', fontWeight: 600, fontSize: '0.9rem', lineHeight: 1.5 }}>
-                  “This allows the system to improve its predictions over time based on real-world data.”
                 </div>
-                <button className="btn-primary" style={{ width: '100%' }} onClick={() => setShowTrainingModal(false)}>Close Sequence</button>
-              </div>
-            )}
-
+              )}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
+      {/* Online Neural Training Overlay */}
+      <AnimatePresence>
+        {showTrainingModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[1400] flex items-center justify-center p-4 select-none">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[420px] p-8 border border-white/10 shadow-2xl flex flex-col items-center text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-neon-purple to-neon-cyan flex items-center justify-center mb-6 shadow-lg">
+                {trainingStep >= 3 
+                  ? <CheckCircle size={28} className="text-white" /> 
+                  : <Cpu size={28} className="text-white animate-spin" />
+                }
+              </div>
+              
+              <h2 className="font-mono text-base font-bold text-white uppercase tracking-wider mb-5">AI Calibration Ingestion</h2>
+              
+              <div className="w-full space-y-4 text-left mb-6 text-xs">
+                <div className={`flex items-center gap-3 transition-opacity duration-300 ${trainingStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
+                  {trainingStep > 0 ? <CheckCircle size={16} className="text-emerald-400" /> : <div className="w-4 h-4 rounded-full border border-neon-cyan border-t-transparent animate-spin shrink-0"></div>}
+                  <span className={`font-semibold ${trainingStep > 0 ? 'text-white' : 'text-neon-cyan font-mono'}`}>Aggregate sprint execution metrics</span>
+                </div>
+                
+                <div className={`flex items-center gap-3 transition-opacity duration-300 ${trainingStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                  {trainingStep > 1 
+                    ? <CheckCircle size={16} className="text-emerald-400" /> 
+                    : trainingStep === 1 
+                      ? <div className="w-4 h-4 rounded-full border border-neon-cyan border-t-transparent animate-spin shrink-0"></div> 
+                      : <Circle size={16} className="text-slate-600" />
+                  }
+                  <span className={`font-semibold ${trainingStep > 1 ? 'text-white' : trainingStep === 1 ? 'text-neon-cyan font-mono' : 'text-slate-500'}`}>Inject parameter variance to dataset</span>
+                </div>
+                
+                <div className={`flex items-center gap-3 transition-opacity duration-300 ${trainingStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
+                  {trainingStep > 2 
+                    ? <CheckCircle size={16} className="text-emerald-400" /> 
+                    : trainingStep === 2 
+                      ? <div className="w-4 h-4 rounded-full border border-neon-cyan border-t-transparent animate-spin shrink-0"></div> 
+                      : <Circle size={16} className="text-slate-600" />
+                  }
+                  <span className={`font-semibold ${trainingStep > 2 ? 'text-white' : trainingStep === 2 ? 'text-neon-cyan font-mono' : 'text-slate-500'}`}>Retrain Random Forest estimators</span>
+                </div>
+              </div>
+
+              {trainingStep >= 3 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full space-y-4">
+                  <div className="bg-emerald-950/20 border border-emerald-900/30 p-3 rounded-xl text-emerald-200 text-[11px] leading-relaxed">
+                    Calibration sequence finished. Internal ML model matrices updated with local execution data.
+                  </div>
+                  <button className="w-full bg-white hover:bg-slate-100 text-bg-deep font-bold text-xs py-2.5 rounded-xl cursor-pointer" onClick={() => setShowTrainingModal(false)}>
+                    Complete Calibration
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Initial Sprint setup overlay */}
       {sprints.length === 0 && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
-          background: 'rgba(255,255,255,0.9)', 
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100 
-        }}>
-          <Layout size={64} color="#0052cc" />
-          <h2 style={{ marginTop: '1.5rem' }}>Create your first Sprint to get started</h2>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', width: '300px' }}>
+        <div className="fixed inset-0 bg-bg-deep/95 backdrop-blur-md z-[1200] flex flex-col items-center justify-center p-6 select-none">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-neon-purple to-neon-cyan flex items-center justify-center mb-6 shadow-lg">
+            <Layout size={28} className="text-white" />
+          </div>
+          <h2 className="font-mono text-base font-bold text-white uppercase tracking-wider mb-2">Create First Sprint Node</h2>
+          <p className="text-slate-400 text-xs mb-6 max-w-sm text-center leading-relaxed font-sans">
+            Initializing sprint pipelines is required to map task execution flow. Define the initial sprint node.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[340px]">
             <input 
               type="text" 
-              className="form-control" 
-              placeholder="e.g. Sprint 1"
+              placeholder="e.g. Sprint Alpha"
               value={newSprintName}
               onChange={(e) => setNewSprintName(e.target.value)}
+              className="flex-1 bg-black/45 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-neon-purple/50 font-sans"
             />
-            <button className="btn-primary" onClick={() => createSprint(newSprintName)}>Create</button>
+            <button 
+              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-5 rounded-xl cursor-pointer transition-colors uppercase tracking-wider font-mono shrink-0"
+              onClick={() => createSprint(newSprintName)}
+            >
+              Deploy Node
+            </button>
           </div>
         </div>
       )}

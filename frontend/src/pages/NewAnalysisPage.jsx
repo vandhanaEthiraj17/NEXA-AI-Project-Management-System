@@ -2,7 +2,9 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { DataContext } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Upload, FileText, Layers, ChevronRight, Search } from 'lucide-react';
+import { AlertCircle, Upload, FileText, Layers, ChevronRight, Search, Cpu, Sparkles, X, LayoutGrid } from 'lucide-react';
+import GlassCard from '../components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NewAnalysisPage = () => {
   const { domain } = useContext(AppContext);
@@ -12,7 +14,6 @@ const NewAnalysisPage = () => {
   const [showSprintModal, setShowSprintModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Initial load
   React.useEffect(() => {
     fetchSprints();
     fetchTasks();
@@ -57,9 +58,9 @@ const NewAnalysisPage = () => {
       ...formData,
       title: task.title || '',
       description: task.description || '',
-      team_size: 5, // Default for PM logic
+      team_size: 5, 
       deadline: task.deadline_days || 30,
-      resources: task.complexity || 5, // Mapping complexity to resource level
+      resources: task.complexity || 5, 
       budget: 10000, 
       demand: 5,
       machines: 2,
@@ -81,268 +82,273 @@ const NewAnalysisPage = () => {
     switch (domain) {
       case 'Software':
         return (
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', width: '100%', gridColumn: 'span 2' }}>
-            <div className="form-group">
-              <label>Team Size</label>
-              <input type="number" name="team_size" value={formData.team_size} onChange={handleChange} className="form-control" />
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full col-span-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Team Size</label>
+              <input type="number" name="team_size" value={formData.team_size} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group">
-              <label>Deadline (Days)</label>
-              <input type="number" name="deadline" value={formData.deadline} onChange={handleChange} className="form-control" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Deadline Target (Days)</label>
+              <input type="number" name="deadline" value={formData.deadline} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label>Resource Level (1-10)</label>
-              <input type="number" name="resources" min="1" max="10" value={formData.resources} onChange={handleChange} className="form-control" />
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Required Resource Allocation (1-10)</label>
+              <input type="number" name="resources" min="1" max="10" value={formData.resources} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
           </div>
         );
       case 'Business':
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', width: '100%', gridColumn: 'span 2' }}>
-            <div className="form-group">
-              <label>Budget ($)</label>
-              <input type="number" name="budget" value={formData.budget} onChange={handleChange} className="form-control" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full col-span-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Target Budget ($)</label>
+              <input type="number" name="budget" value={formData.budget} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group">
-              <label>Market Demand (1-10)</label>
-              <input type="number" name="demand" min="1" max="10" value={formData.demand} onChange={handleChange} className="form-control" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Market Demand Weight (1-10)</label>
+              <input type="number" name="demand" min="1" max="10" value={formData.demand} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label>Available Resources (1-10)</label>
-              <input type="number" name="resources" min="1" max="10" value={formData.resources} onChange={handleChange} className="form-control" />
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Available Resources (1-10)</label>
+              <input type="number" name="resources" min="1" max="10" value={formData.resources} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
           </div>
         );
       case 'Hardware':
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', width: '100%', gridColumn: 'span 2' }}>
-            <div className="form-group">
-              <label>Number of Machines</label>
-              <input type="number" name="machines" value={formData.machines} onChange={handleChange} className="form-control" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full col-span-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Active Machinery Count</label>
+              <input type="number" name="machines" value={formData.machines} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group">
-              <label>Manpower Count</label>
-              <input type="number" name="manpower" value={formData.manpower} onChange={handleChange} className="form-control" />
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Personnel Count</label>
+              <input type="number" name="manpower" value={formData.manpower} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label>Production Time (Days)</label>
-              <input type="number" name="production_time" value={formData.production_time} onChange={handleChange} className="form-control" />
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Manufacturing Timeline (Days)</label>
+              <input type="number" name="production_time" value={formData.production_time} onChange={handleChange} className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono" />
             </div>
           </div>
         );
       default:
-        return <p>Please select a domain first.</p>;
+        return <p className="text-slate-400 text-xs col-span-2">Please initialize domain routing settings.</p>;
     }
   };
 
   return (
-    <div className="animate-fade-in">
-      <header className="page-header">
-        <h1 className="page-title">{domain} Intelligence Center</h1>
-        <p className="page-subtitle">Configure parameters to derive AI-driven decision intelligence for your project.</p>
+    <div className="space-y-6 select-none max-w-4xl mx-auto">
+      {/* Header */}
+      <header className="pb-4 border-b border-white/5">
+        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <Cpu className="text-neon-purple animate-pulse" size={24} />
+          {domain} Simulation Engine
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">Configure project variables to run AI complexity and risk calculations.</p>
       </header>
 
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <div className="card">
-          {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#ffebe6', color: '#bf2600', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem', border: '1px solid #ffbdad' }}>
-              <AlertCircle size={20} />
-              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{error}</span>
-            </div>
-          )}
+      {/* Main Form Glass Card */}
+      <GlassCard className="p-6 md:p-8 relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
 
-          <form onSubmit={handleSubmit} className="analysis-form">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {/* Main Info Section */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', width: '100%' }}>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label>Project Title</label>
-                  <input type="text" name="title" value={formData.title} onChange={handleChange} className="form-control" required placeholder="e.g. Q3 Growth Strategy" />
-                </div>
-                
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label>Detailed Project Description</label>
-                  <textarea 
-                    name="description" 
-                    value={formData.description} 
-                    onChange={handleChange} 
-                    placeholder="Provide deep context for AI to derive complexity and risks..."
-                    className="form-control"
-                    style={{ minHeight: '120px', resize: 'vertical' }}
-                  />
-                  <p style={{ fontSize: '0.75rem', color: '#5e6c84', marginTop: '0.4rem' }}>AI will automatically determine Complexity based on your description.</p>
-                </div>
-
-                {renderFormFields()}
-              </div>
-
-              {/* File Uploads Section */}
-              <div style={{ borderTop: '1px solid #f4f5f7', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%' }}>
-                
-                {/* Team Members Upload */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600, color: '#44546f' }}>Team Members Details</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div 
-                      onClick={() => document.getElementById('team-file-upload').click()}
-                      style={{ border: '2px dashed #dfe1e6', padding: '1.5rem', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', background: '#f8f9fa' }}
-                      onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
-                      onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
-                    >
-                      <Upload size={24} style={{ color: '#0052cc', marginBottom: '0.5rem' }} />
-                      <div style={{ fontSize: '0.85rem', color: '#172b4d', fontWeight: 500 }}>Upload Team Data</div>
-                      <div style={{ fontSize: '0.75rem', color: '#5e6c84' }}>Excel, CSV (from local storage)</div>
-                      <input id="team-file-upload" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden onChange={handleTeamFileChange} />
-                    </div>
-
-                    {teamFiles.length > 0 && (
-                      <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
-                        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#44546f', marginBottom: '0.75rem' }}>Ready for AI Analysis ({teamFiles.length})</p>
-                        <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
-                          {teamFiles.map((f, i) => (
-                            <div key={`tf-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#5e6c84', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              <FileText size={12} style={{ flexShrink: 0 }} /> {f.name}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Reference Files Upload */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600, color: '#44546f' }}>Project Reference Files</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div 
-                      onClick={() => document.getElementById('file-upload').click()}
-                      style={{ border: '2px dashed #dfe1e6', padding: '1.5rem', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', background: '#f8f9fa' }}
-                      onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
-                      onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
-                    >
-                      <Upload size={24} style={{ color: '#0052cc', marginBottom: '0.5rem' }} />
-                      <div style={{ fontSize: '0.85rem', color: '#172b4d', fontWeight: 500 }}>Drop reference files</div>
-                      <div style={{ fontSize: '0.75rem', color: '#5e6c84' }}>PDF, Docs, Images</div>
-                      <input id="file-upload" type="file" multiple hidden onChange={handleFileChange} />
-                    </div>
-
-                    {files.length > 0 && (
-                      <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
-                        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#44546f', marginBottom: '0.75rem' }}>Uploaded ({files.length})</p>
-                        <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
-                          {files.map((f, i) => (
-                            <div key={`rf-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#5e6c84', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              <FileText size={12} style={{ flexShrink: 0 }} /> {f.name}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
-              <button type="submit" className="btn-primary" disabled={isAnalyzing} style={{ width: 'auto', padding: '1rem 4rem', borderRadius: '8px', fontSize: '1rem' }}>
-                {isAnalyzing ? 'Processing AI Models...' : 'Run Intelligence Analysis'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Analyze from Sprint Option */}
-        <div 
-          className="card" 
-          style={{ 
-            marginTop: '2rem', 
-            background: 'linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)', 
-            border: '1px solid #cce4ff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '1.5rem 2rem'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#0052cc', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Layers size={24} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#172b4d' }}>Analyze from Active Sprint</h3>
-              <p style={{ fontSize: '0.85rem', color: '#5e6c84' }}>Import existing project data from your Kanban board for instant AI evaluation.</p>
-            </div>
+        {error && (
+          <div className="bg-rose-950/20 border border-rose-900/30 text-rose-200 p-3.5 rounded-xl text-xs flex items-center gap-2 mb-6">
+            <AlertCircle size={16} className="text-rose-400" />
+            <span className="font-semibold">{error}</span>
           </div>
-          <button 
-            onClick={() => setShowSprintModal(true)}
-            className="btn-secondary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white' }}
-          >
-            Browse Sprints <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
+        )}
 
-      {/* Sprint Selection Modal */}
-      {showSprintModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(9, 30, 66, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Select Project from Sprint</h2>
-              <button onClick={() => setShowSprintModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5e6c84' }}>Close</button>
-            </div>
-
-            <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Project Spec Title</label>
               <input 
                 type="text" 
-                placeholder="Search tasks..." 
-                className="form-control" 
-                style={{ paddingLeft: '2.5rem' }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                name="title" 
+                value={formData.title} 
+                onChange={handleChange} 
+                required 
+                placeholder="e.g. Platform Migration Core"
+                className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
               />
             </div>
+            
+            <div className="space-y-1 col-span-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Detailed Scope Description</label>
+              <textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleChange} 
+                placeholder="Describe project details. The AI parsing model will automatically calculate complexity parameters based on keywords."
+                className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors font-sans resize-none h-32"
+              />
+              <span className="text-[9px] text-slate-500 font-mono block mt-1 uppercase">AI-based automatic complexity extraction is active</span>
+            </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-              {tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                tasks
-                  .filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map(task => (
-                    <div 
-                      key={task.id} 
-                      onClick={() => handleSelectTask(task)}
-                      style={{ 
-                        padding: '1rem', 
-                        border: '1px solid #dfe1e6', 
-                        borderRadius: '8px', 
-                        marginBottom: '0.75rem', 
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.borderColor = '#0052cc'}
-                      onMouseOut={e => e.currentTarget.style.borderColor = '#dfe1e6'}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <span style={{ fontWeight: 600, color: '#172b4d' }}>{task.title}</span>
-                        <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', background: '#f4f5f7', color: '#5e6c84' }}>{task.status}</span>
-                      </div>
-                      <p style={{ fontSize: '0.8rem', color: '#5e6c84', margin: 0 }}>Complexity: {task.complexity} | Deadline: {task.deadline_days} days</p>
-                    </div>
-                  ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '3rem 0', color: '#5e6c84' }}>
-                  No tasks found. Try a different search.
+            {renderFormFields()}
+          </div>
+
+          {/* Files dropzone deck */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+            {/* Team details dropzone */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Workforce Performance Registry</label>
+              <div className="space-y-3">
+                <div 
+                  onClick={() => document.getElementById('team-file-upload').click()}
+                  className="border-2 border-dashed border-white/5 hover:border-neon-purple/40 bg-white/[0.01] hover:bg-white/[0.03] p-5 rounded-2xl text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center"
+                >
+                  <Upload size={20} className="text-neon-purple mb-2 animate-bounce" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">Sync Team File</span>
+                  <span className="text-[9px] text-slate-500 font-sans mt-0.5">XLSX, CSV registry formats</span>
+                  <input id="team-file-upload" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" hidden onChange={handleTeamFileChange} />
                 </div>
-              )}
+
+                {teamFiles.length > 0 && (
+                  <div className="bg-black/40 border border-white/5 p-3 rounded-xl max-h-24 overflow-y-auto space-y-1">
+                    <div className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">TELEMETRY SYNC READY ({teamFiles.length})</div>
+                    {teamFiles.map((f, i) => (
+                      <div key={i} className="text-[10px] text-slate-300 font-sans flex items-center gap-1.5 truncate">
+                        <FileText size={12} className="text-neon-purple shrink-0" /> {f.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Reference files dropzone */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Reference Scope Documents</label>
+              <div className="space-y-3">
+                <div 
+                  onClick={() => document.getElementById('file-upload').click()}
+                  className="border-2 border-dashed border-white/5 hover:border-neon-cyan/40 bg-white/[0.01] hover:bg-white/[0.03] p-5 rounded-2xl text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center"
+                >
+                  <Upload size={20} className="text-neon-cyan mb-2 animate-bounce" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">Sync Reference Files</span>
+                  <span className="text-[9px] text-slate-500 font-sans mt-0.5">PDF, DOCX configurations</span>
+                  <input id="file-upload" type="file" multiple hidden onChange={handleFileChange} />
+                </div>
+
+                {files.length > 0 && (
+                  <div className="bg-black/40 border border-white/5 p-3 rounded-xl max-h-24 overflow-y-auto space-y-1">
+                    <div className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">SYNCED SPEC SHEETS ({files.length})</div>
+                    {files.map((f, i) => (
+                      <div key={i} className="text-[10px] text-slate-300 font-sans flex items-center gap-1.5 truncate">
+                        <FileText size={12} className="text-neon-cyan shrink-0" /> {f.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Submit */}
+          <div className="pt-4 flex justify-center border-t border-white/5">
+            <button 
+              type="submit" 
+              disabled={isAnalyzing} 
+              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-3 px-8 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center justify-center gap-1.5 font-mono uppercase tracking-wider"
+            >
+              {isAnalyzing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} />
+              )}
+              Initialize Intelligence Scans
+            </button>
+          </div>
+        </form>
+      </GlassCard>
+
+      {/* Kanban Sprints import triggers */}
+      <GlassCard className="border border-neon-cyan/20 bg-gradient-to-r from-neon-cyan/5 to-transparent flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex gap-4 items-center">
+          <div className="w-10 h-10 rounded-xl bg-neon-cyan/10 border border-neon-cyan/20 flex items-center justify-center text-neon-cyan shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+            <LayoutGrid size={20} />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-0.5">Evaluate from Sprint Backlog</h3>
+            <p className="text-[10px] text-slate-400 font-sans">
+              Scan existing project tasks directly from active Kanban lists for quick calibration.
+            </p>
+          </div>
         </div>
-      )}
+        <button 
+          onClick={() => setShowSprintModal(true)}
+          className="bg-white hover:bg-slate-100 text-bg-deep font-bold text-xs py-2 px-4 rounded-xl cursor-pointer transition-all whitespace-nowrap uppercase tracking-wider font-mono flex items-center gap-1"
+        >
+          Browse Backlog Nodes <ChevronRight size={14} />
+        </button>
+      </GlassCard>
+
+      {/* Sprints selection Modal */}
+      <AnimatePresence>
+        {showSprintModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1300] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[500px] max-h-[80vh] flex flex-col p-6 border border-white/10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
+              
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
+                  Select Backlog Node
+                </h2>
+                <button onClick={() => setShowSprintModal(false)} className="text-slate-400 hover:text-white p-1 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Search bar */}
+              <div className="relative mb-4">
+                <Search size={14} className="absolute left-3.5 top-3.5 text-slate-500" />
+                <input 
+                  type="text" 
+                  placeholder="Filter tasks..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                />
+              </div>
+
+              {/* Tasks List */}
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 divide-y divide-white/5">
+                {tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                  tasks
+                    .filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(task => (
+                      <div 
+                        key={task.id} 
+                        onClick={() => handleSelectTask(task)}
+                        className="p-3 border border-white/5 hover:border-neon-cyan/40 bg-black/45 hover:bg-black/60 rounded-xl cursor-pointer transition-all group flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-semibold text-xs text-white mb-1 group-hover:text-neon-cyan transition-colors">{task.title}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">COMPLEXITY: {task.complexity} | TIMELINE: {task.deadline_days}d</div>
+                        </div>
+                        <span className="text-[9px] font-mono font-bold bg-white/[0.04] text-slate-400 border border-white/5 px-2 py-0.5 rounded uppercase tracking-wider shrink-0 ml-2">
+                          {task.status}
+                        </span>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-10 text-slate-500 text-xs">
+                    No matching task logs located.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default NewAnalysisPage;
-

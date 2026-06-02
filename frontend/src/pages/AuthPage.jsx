@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
-import { Activity, Mail, CheckCircle, X, User } from 'lucide-react';
+import { Activity, Mail, CheckCircle, X, User, Lock, Sparkles, Terminal, Shield } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AuthPage = () => {
   const [username, setUsername] = useState('');
@@ -92,7 +93,6 @@ const AuthPage = () => {
         setDebugOtp(data.debug_otp || '');
         setShowOtp(true);
       } else if (data.debug_otp) {
-        // Even if email failed, we have a debug OTP for the user to bypass
         setDebugOtp(data.debug_otp);
         setShowOtp(true);
         setAuthError(data.error || 'Email delivery failed, but you can bypass with the code below.');
@@ -134,7 +134,7 @@ const AuthPage = () => {
   };
 
   const GoogleIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 48 48">
+    <svg width="18" height="18" viewBox="0 0 48 48" className="shrink-0">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
       <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
       <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
@@ -144,287 +144,287 @@ const AuthPage = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
-      <div className="card auth-card" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem', color: 'var(--primary)' }}>
-          <img src="/nexa-logo.png" alt="NexaAI Logo" style={{ height: '64px' }} />
+    <div className="min-h-screen flex items-center justify-center bg-bg-deep cyber-grid relative overflow-hidden select-none px-4">
+      {/* Abstract Glowing Blurs */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-neon-purple/5 blur-[120px] rounded-full"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-neon-cyan/5 blur-[120px] rounded-full"></div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="glass-panel rounded-2xl w-full max-w-[420px] p-8 border border-white/5 shadow-2xl relative z-10 overflow-hidden"
+      >
+        {/* Futuristic Card Header */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-neon-purple to-neon-cyan flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)] mb-4">
+            <Activity size={28} className="text-white" />
+          </div>
+          <h2 className="font-mono text-xl font-bold tracking-wider text-glow text-white">NEXA.AI</h2>
+          <p className="text-slate-400 text-xs mt-1">Decision Intelligence Operator Login</p>
         </div>
-        <h2 style={{ textAlign: 'center', fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Welcome Back</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Sign in to access the Decision Engine</p>
 
         {user ? (
-          <div style={{ textAlign: 'center', background: '#f0fdf4', padding: '1rem', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '0', animation: 'fadeIn 0.3s ease' }}>
-            <CheckCircle size={20} color="#16a34a" style={{ marginBottom: '0.5rem', margin: '0 auto 0.5rem auto', display: 'block' }} />
-            <p style={{ color: '#166534', fontWeight: 500, margin: 0 }}>Continue as {user.username}</p>
+          <div className="text-center bg-emerald-950/20 border border-emerald-900/30 p-4 rounded-xl">
+            <CheckCircle size={24} className="text-emerald-400 mx-auto mb-2" />
+            <p className="text-emerald-200 font-medium text-xs">Access Granted. Operating session active.</p>
+            <button 
+              onClick={() => user.role === 'client' ? navigate('/app/client-portal') : navigate('/select-domain')} 
+              className="mt-3 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg cursor-pointer transition-colors"
+            >
+              Continue as {user.username}
+            </button>
           </div>
         ) : (
           <>
+            {/* Google Authentication Button */}
             <button 
               type="button"
-              className="google-btn"
               onClick={() => setShowGoogleAccounts(true)}
               disabled={isGoogleLoading}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                background: '#fff',
-                border: '1px solid #e5e7eb',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                cursor: isGoogleLoading ? 'wait' : 'pointer',
-                fontWeight: 500,
-                fontSize: '0.95rem',
-                color: '#374151',
-                marginBottom: '1.5rem',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                transition: 'all 0.2s ease',
-                opacity: isGoogleLoading ? 0.7 : 1
-              }}
-              onMouseOver={(e) => !isGoogleLoading && (e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.08)')}
-              onMouseOut={(e) => !isGoogleLoading && (e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)')}
+              className="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-slate-100 disabled:opacity-70 text-slate-800 font-semibold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-all duration-200 border border-slate-200 hover:shadow-lg"
             >
               <GoogleIcon />
-              {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+              {isGoogleLoading ? 'Decrypting Credentials...' : 'Continue with Google'}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: '#9ca3af' }}>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
-              <span style={{ padding: '0 1rem', fontSize: '0.8rem', textTransform: 'uppercase' }}>or</span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+            <div className="flex items-center my-5 text-[10px] text-slate-600 uppercase tracking-widest font-mono">
+              <div className="flex-1 h-[1px] bg-white/5"></div>
+              <span className="px-3">or credentials</span>
+              <div className="flex-1 h-[1px] bg-white/5"></div>
             </div>
 
-            {authError && <p style={{ color: '#de350b', fontSize: '0.85rem', textAlign: 'center', marginBottom: '1rem' }}>{authError}</p>}
+            {authError && (
+              <div className="bg-rose-950/20 border border-rose-900/30 text-rose-200 p-2.5 rounded-lg text-center text-xs mb-4">
+                {authError}
+              </div>
+            )}
 
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div className="form-group">
-                <label>Email Address</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)} 
-                  required 
-                  placeholder="e.g. admin@enterprise.com"
-                />
+            {/* Standard Login Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Operator Terminal ID</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                    <User size={14} />
+                  </span>
+                  <input 
+                    type="text" 
+                    value={username} 
+                    onChange={(e) => setUsername(e.target.value)} 
+                    required 
+                    placeholder="e.g. admin@enterprise.com"
+                    className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Password</label>
-                <input 
-                  type="password" 
-                  className="form-control" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
-                  placeholder="••••••••"
-                />
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Security Access Pass</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                    <Lock size={14} />
+                  </span>
+                  <input 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    placeholder="••••••••"
+                    className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                  />
+                </div>
               </div>
-              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem' }}>
-                Authenticate Insight Access
+
+              <button 
+                type="submit" 
+                className="w-full bg-neon-purple hover:bg-neon-purple/80 text-white font-semibold text-xs py-3 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.35)] transition-all duration-300 flex items-center justify-center gap-1.5"
+              >
+                <Terminal size={14} />
+                Authenticate Intelligence Access
               </button>
             </form>
           </>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          System v2.4 | Enterprise Authentication
-        </div>
-        
-        <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem' }}>
+        {/* Footer */}
+        <div className="text-center mt-6 space-y-3">
+          <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">System v3.0 | Secure Node</div>
           <button 
             type="button"
             onClick={() => setShowSignup(true)} 
-            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 500, padding: 0 }}
-            className="hover-underline"
+            className="text-neon-cyan hover:text-neon-cyan/80 text-xs font-semibold bg-transparent border-none cursor-pointer outline-none transition-colors hover:underline"
           >
-            New user? Sign Up
+            Create New Platform Operator Account
           </button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Google Account Selector */}
-      {showGoogleAccounts && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
-          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: '360px', padding: '1.5rem', borderRadius: '12px', background: '#fff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <GoogleIcon />
-                <span style={{ fontWeight: 600, color: '#3c4043' }}>Sign in with Google</span>
+      {/* Google Mock Selector Drawer */}
+      <AnimatePresence>
+        {showGoogleAccounts && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1200]">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[360px] p-6 border border-white/10 shadow-2xl relative"
+            >
+              <div className="flex justify-between items-center mb-5">
+                <div className="flex items-center gap-2">
+                  <GoogleIcon />
+                  <span className="font-semibold text-slate-200 text-xs uppercase tracking-wider">Mock Google Auth</span>
+                </div>
+                <button onClick={() => setShowGoogleAccounts(false)} className="text-slate-400 hover:text-white p-1">
+                  <X size={16} />
+                </button>
               </div>
-              <X size={20} style={{ cursor: 'pointer', color: '#5f6368' }} onClick={() => setShowGoogleAccounts(false)} />
-            </div>
-            
-            <p style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '0.25rem', color: '#202124' }}>Choose an account</p>
-            <p style={{ fontSize: '0.85rem', color: '#5f6368', marginBottom: '1.5rem' }}>to continue to NexaAI</p>
+              
+              <p className="text-sm font-semibold text-white mb-0.5">Select active mock account</p>
+              <p className="text-slate-500 text-[11px] mb-4">to sync permissions with NexaAI</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {googleAccounts.map((acc, i) => (
-                <div 
-                  key={acc.email}
-                  onClick={() => handleGoogleAccountSelect(acc.email)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '0.75rem',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    borderBottom: i === 0 ? '1px solid #e8eaed' : 'none',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'none'}
-                >
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e8eaed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5f6368' }}>
-                    <User size={18} />
+              <div className="space-y-1.5">
+                {googleAccounts.map((acc, i) => (
+                  <div 
+                    key={acc.email}
+                    onClick={() => handleGoogleAccountSelect(acc.email)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.03] border border-transparent hover:border-white/5 transition-all duration-200"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/5 flex items-center justify-center text-slate-400">
+                      <User size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-white">{acc.name}</div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{acc.email}</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 500, color: '#3c4043' }}>{acc.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#70757a' }}>{acc.email}</div>
-                  </div>
-                </div>
-              ))}
-              <div 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '0.75rem',
-                  cursor: 'pointer',
-                  borderRadius: '4px',
-                  color: '#1a73e8',
-                  fontSize: '0.9rem',
-                  fontWeight: 500
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
-              >
-                <div style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={18} />
-                </div>
-                <span>Use another account</span>
+                ))}
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {showSignup && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
-          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div className="card signup-modal" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>Create Account</h2>
-            
-            {verificationSuccess ? (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem', animation: 'fadeIn 0.3s ease' }}>
-                <CheckCircle size={48} color="#16a34a" style={{ margin: '0 auto 1rem auto', display: 'block' }} />
-                <h3 style={{ color: '#166534', marginBottom: '0.5rem', fontSize: '1.2rem' }}>Account verified successfully</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Redirecting to login...</p>
-              </div>
-            ) : showOtp ? (
-              <form onSubmit={handleOtpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
-                <div style={{ textAlign: 'center', background: '#eff6ff', padding: '1rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                  <Mail size={24} color="#3b82f6" style={{ margin: '0 auto 0.5rem auto', display: 'block' }} />
-                  <p style={{ color: '#1e40af', margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>
-                    Verification code sent to<br/><strong>{signupEmail}</strong>
-                  </p>
+      {/* Sign Up / Verification Drawer */}
+      <AnimatePresence>
+        {showSignup && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100]">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[400px] p-8 border border-white/10 shadow-2xl relative"
+            >
+              <h2 className="text-center font-semibold text-lg text-white mb-5 flex items-center justify-center gap-2">
+                <Shield size={18} className="text-neon-cyan" />
+                Operator Provisioning
+              </h2>
+              
+              {verificationSuccess ? (
+                <div className="text-center py-6">
+                  <CheckCircle size={36} className="text-emerald-400 mx-auto mb-3 animate-bounce" />
+                  <h3 className="text-emerald-200 font-semibold text-sm mb-1">Authorization Code Confirmed</h3>
+                  <p className="text-slate-400 text-xs">Syncing keys. Redirecting to terminal...</p>
                 </div>
-                {authError && <p style={{ color: '#de350b', fontSize: '0.85rem', textAlign: 'center' }}>{authError}</p>}
-                {debugOtp && (
-                  <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem' }}>
-                    <p style={{ color: '#92400e', fontSize: '0.8rem', fontWeight: 600, margin: 0, textAlign: 'center' }}>
-                      DEVELOPER BYPASS: Use code <strong>{debugOtp}</strong>
-                    </p>
-                    <p style={{ color: '#b45309', fontSize: '0.7rem', margin: '0.25rem 0 0 0', textAlign: 'center' }}>
-                      (Email failed to send. Check app.py SMTP settings)
+              ) : showOtp ? (
+                <form onSubmit={handleOtpSubmit} className="space-y-4">
+                  <div className="bg-neon-cyan/5 border border-neon-cyan/20 p-3.5 rounded-xl text-center">
+                    <Mail size={20} className="text-neon-cyan mx-auto mb-2" />
+                    <p className="text-slate-300 text-xs leading-relaxed">
+                      Verification code dispatched to<br/><strong className="text-white">{signupEmail}</strong>
                     </p>
                   </div>
-                )}
-                <div className="form-group">
-                  <label>Enter Verification Code</label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    value={otp} 
-                    onChange={(e) => setOtp(e.target.value)} 
-                    required 
-                    placeholder="e.g. 123456"
-                    style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1.2rem', fontWeight: 600 }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }} onClick={() => setShowOtp(false)}>
-                    Back
-                  </button>
-                  <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.75rem' }}>
-                    Verify
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleSignupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
-                <div className="form-group">
-                  <label>Email Address</label>
-                  <input 
-                    type="email" 
-                    className="form-control" 
-                    value={signupEmail} 
-                    onChange={(e) => setSignupEmail(e.target.value)} 
-                    required 
-                    placeholder="user@enterprise.com"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Password</label>
-                  <input 
-                    type="password" 
-                    className="form-control" 
-                    value={signupPass} 
-                    onChange={(e) => setSignupPass(e.target.value)} 
-                    required 
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Confirm Password</label>
-                  <input 
-                    type="password" 
-                    className="form-control" 
-                    value={signupConfirm} 
-                    onChange={(e) => setSignupConfirm(e.target.value)} 
-                    required 
-                    placeholder="••••••••"
-                  />
-                </div>
-                {authError && <p style={{ color: '#de350b', fontSize: '0.85rem', textAlign: 'center' }}>{authError}</p>}
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
-                  <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }} onClick={() => setShowSignup(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary" disabled={isSendingOtp} style={{ flex: 1, padding: '0.75rem', background: '#111827' }}>
-                    {isSendingOtp ? 'Sending...' : 'Create Account'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+                  
+                  {authError && <p className="text-rose-400 text-center text-xs">{authError}</p>}
+                  
+                  {debugOtp && (
+                    <div className="bg-amber-950/20 border border-amber-900/30 p-3 rounded-xl">
+                      <p className="text-amber-200 text-xs font-semibold text-center">
+                        DEVELOPER BYPASS CODE: <strong className="text-white font-mono">{debugOtp}</strong>
+                      </p>
+                      <p className="text-slate-500 text-[10px] text-center mt-1">
+                        (Email SMTP is mocked/bypassed locally)
+                      </p>
+                    </div>
+                  )}
 
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block text-center">Verification Code</label>
+                    <input 
+                      type="text" 
+                      value={otp} 
+                      onChange={(e) => setOtp(e.target.value)} 
+                      required 
+                      placeholder="XXXXXX"
+                      className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl py-3 text-center text-lg font-mono font-bold tracking-[8px] text-white outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button type="button" className="flex-1 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer transition-colors" onClick={() => setShowOtp(false)}>
+                      Back
+                    </button>
+                    <button type="submit" className="flex-1 bg-neon-cyan hover:bg-neon-cyan/85 text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-300">
+                      Verify Code
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleSignupSubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Account Email</label>
+                    <input 
+                      type="email" 
+                      value={signupEmail} 
+                      onChange={(e) => setSignupEmail(e.target.value)} 
+                      required 
+                      placeholder="user@enterprise.com"
+                      className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Security Access Pass</label>
+                    <input 
+                      type="password" 
+                      value={signupPass} 
+                      onChange={(e) => setSignupPass(e.target.value)} 
+                      required 
+                      placeholder="••••••••"
+                      className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Confirm Access Pass</label>
+                    <input 
+                      type="password" 
+                      value={signupConfirm} 
+                      onChange={(e) => setSignupConfirm(e.target.value)} 
+                      required 
+                      placeholder="••••••••"
+                      className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+
+                  {authError && <p className="text-rose-400 text-center text-xs">{authError}</p>}
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" className="flex-1 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer transition-colors" onClick={() => setShowSignup(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={isSendingOtp} className="flex-1 bg-neon-cyan hover:bg-neon-cyan/85 text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer disabled:opacity-50 transition-colors">
+                      {isSendingOtp ? 'Registering...' : 'Provision Account'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default AuthPage;
-

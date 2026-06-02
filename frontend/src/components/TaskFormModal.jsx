@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { DataContext } from '../context/DataContext';
 import { X, PlusCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const TaskFormModal = ({ onClose, sprintId }) => {
   const { createTask } = useContext(DataContext);
@@ -20,86 +21,99 @@ const TaskFormModal = ({ onClose, sprintId }) => {
   };
 
   return (
-    <div style={{ 
-      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
-      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', 
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 
-    }}>
-      <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', animation: 'scaleIn 0.2s ease' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#172b4d' }}>Create New Task</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5e6c84' }}>
-            <X size={20} />
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1300] flex items-center justify-center p-4 select-none">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="glass-panel-heavy rounded-2xl w-full max-w-[480px] p-6 border border-white/10 shadow-2xl relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
+        
+        {/* Header */}
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-sm font-bold text-white tracking-wide uppercase font-mono">Create New Task Spec</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 hover:bg-white/5 rounded-lg transition-colors cursor-pointer">
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="form-group">
-            <label>Task Title</label>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Task Title</label>
             <input 
               type="text" 
-              className="form-control" 
               required 
               placeholder="e.g. Implement Auth Logic"
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
+              className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
             />
           </div>
           
-          <div className="form-group">
-            <label>Description</label>
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Description Details</label>
             <textarea 
-              className="form-control" 
               rows="3" 
-              style={{ padding: '0.6rem 1rem', fontFamily: 'inherit' }}
-              placeholder="Provide context for the task..."
+              placeholder="Provide scope context for execution..."
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors font-sans resize-none"
             ></textarea>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>Assignee</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Assignee</label>
               <input 
                 type="text" 
-                className="form-control" 
                 placeholder="Name"
                 value={formData.assignee}
                 onChange={(e) => setFormData({...formData, assignee: e.target.value})}
+                className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition-colors"
               />
             </div>
-            <div className="form-group">
-              <label>Complexity (1-10)</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Complexity (1-10)</label>
               <input 
                 type="number" 
                 min="1" max="10"
-                className="form-control"
                 value={formData.complexity}
                 onChange={(e) => setFormData({...formData, complexity: e.target.value})}
+                className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono"
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Deadline (Days from now)</label>
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Deadline (Days Remaining)</label>
             <input 
               type="number" 
-              className="form-control"
               value={formData.deadline_days}
               onChange={(e) => setFormData({...formData, deadline_days: e.target.value})}
+              className="w-full bg-black/45 border border-white/5 focus:border-neon-purple/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-colors font-mono"
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-            <button type="button" className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }} onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.75rem' }}>
-              <PlusCircle size={18} />
-              Add Task
+          <div className="flex gap-3 pt-2">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="flex-1 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 text-slate-400 hover:text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="flex-1 bg-neon-purple hover:bg-neon-purple/85 text-white font-bold text-xs py-2.5 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center justify-center gap-1.5 font-mono uppercase tracking-wider"
+            >
+              <PlusCircle size={14} />
+              Add Task Spec
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

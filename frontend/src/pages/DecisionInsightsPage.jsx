@@ -4,15 +4,17 @@ import {
 } from 'recharts';
 import { AppContext } from '../context/AppContext';
 import { DataContext } from '../context/DataContext';
-import { Info, CheckCircle, ShieldAlert, X, Mail, MessageCircle, Download, Share2 } from 'lucide-react';
+import { Info, CheckCircle, ShieldAlert, X, Mail, MessageCircle, Download, Share2, Sparkles, AlertCircle, Lightbulb } from 'lucide-react';
+import GlassCard from '../components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const TrendyTooltip = ({ active, payload, label, best_decision }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(8px)', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: '#172b4d' }}>{label}</p>
-        <p style={{ margin: '4px 0 0 0', fontWeight: 600, color: payload[0].payload.name === best_decision.name ? '#52c41a' : '#0052cc', fontSize: '0.85rem' }}>
-          Risk: {payload[0].value.toFixed(1)}%
+      <div className="glass-panel-heavy p-3 rounded-lg border border-white/10 text-xs">
+        <p className="font-mono font-bold text-white mb-1 uppercase tracking-wider">{label}</p>
+        <p className={`font-mono font-semibold ${payload[0].payload.name === best_decision.name ? 'text-emerald-400' : 'text-neon-cyan'}`}>
+          Risk Exposure: {payload[0].value.toFixed(1)}%
         </p>
       </div>
     );
@@ -27,9 +29,19 @@ const DecisionInsightsPage = () => {
 
   if (!data) {
     return (
-      <div style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#333' }}>No Analytics</h2>
-        <p style={{ color: '#666' }}>Run an analysis to generate AI-powered decision insights.</p>
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-panel p-8 rounded-2xl border border-white/5 max-w-md w-full relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
+          <AlertCircle size={44} className="text-neon-purple mx-auto mb-4 animate-bounce" />
+          <h2 className="font-mono text-lg font-bold text-white uppercase tracking-wider mb-2">No Strategic Analytics</h2>
+          <p className="text-slate-400 text-xs leading-relaxed mb-6">
+            Execute a project scoping simulation first to compile active strategic pathways and decision insights.
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -39,127 +51,157 @@ const DecisionInsightsPage = () => {
   const scenarios = data.scenarios;
 
   const handleExport = (type) => {
-    // Mock export handling
     alert(`Generating ${type} export...`);
     setShowExportModal(false);
   };
 
   return (
-    <div className="animate-fade-in insights-container">
-      <header className="page-header">
-        <h1 className="page-title">{domain} Strategic Insights</h1>
-        <p className="page-subtitle">Deep learning analysis of input parameters and simulated outcomes.</p>
+    <div className="space-y-6 select-none">
+      {/* Header */}
+      <header className="pb-4 border-b border-white/5">
+        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <Lightbulb className="text-neon-cyan" size={24} />
+          {domain} Scenario Analysis
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">Deep analysis of operational parameters and comparative simulated outcomes.</p>
       </header>
 
-      <div className="card shadow-sm" style={{ marginBottom: '2rem', borderLeft: '6px solid #0052cc', padding: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <Info color="#0052cc" size={32} />
-          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1a1a1a' }}>Why this decision?</h2>
+      {/* Why this decision Explanation */}
+      <GlassCard className="border-l-4 border-l-neon-cyan p-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          <Sparkles size={80} className="text-neon-cyan" />
         </div>
-        <div style={{ fontSize: '1.1rem', lineHeight: '1.8', color: '#444' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="p-1 rounded bg-neon-cyan-dim text-neon-cyan">
+            <Info size={18} />
+          </div>
+          <h2 className="font-bold text-xs text-white uppercase tracking-wider">AI Executive Inference Summary</h2>
+        </div>
+        <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-sans">
           {explanation}
-        </div>
-      </div>
+        </p>
+      </GlassCard>
 
-      <div className="insights-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        <div className="card shadow-sm">
-          <h3 className="section-title">Efficacy Analysis</h3>
-          <div style={{ height: '300px', marginTop: '1rem' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scenarios} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="optGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#52c41a" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#52c41a" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="defGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0052cc" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#0052cc" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#5e6c84', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#5e6c84', fontSize: 12}} />
-                <Tooltip content={<TrendyTooltip best_decision={best_decision} />} />
-                <Bar dataKey="risk" radius={[10, 10, 0, 0]} barSize={45}>
-                  {scenarios.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.name === best_decision.name ? 'url(#optGradient)' : 'url(#defGradient)'} 
-                      stroke={entry.name === best_decision.name ? '#52c41a' : '#0052cc'}
-                      strokeWidth={1}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginTop: '1rem' }}>
-            Comparative risk levels across different simulated configurations.
-          </p>
-        </div>
-
-        <div className="card shadow-sm" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
-          <h3 className="section-title">Critical Takeaways</h3>
-          
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '1rem', background: '#f0fff4', borderRadius: '8px', border: '1px solid #c6f6d5' }}>
-            <CheckCircle color="#2a9d8f" size={24} style={{ flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700, color: '#2a9d8f', marginBottom: '0.25rem' }}>Optimized Path Found</div>
-              <div style={{ fontSize: '0.9rem', color: '#2d3748' }}>The "{best_decision.name}" scenario offers the best risk-to-resource ratio.</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        {/* Efficacy Chart */}
+        <GlassCard className="p-5 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-6">Scenario Exposure Calibration</h3>
+            <div className="w-full h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scenarios} margin={{ top: 20, right: 10, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="optGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="defGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10, fontFamily: 'monospace'}} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10, fontFamily: 'monospace'}} />
+                  <Tooltip content={<TrendyTooltip best_decision={best_decision} />} />
+                  <Bar dataKey="risk" radius={[8, 8, 0, 0]} barSize={40}>
+                    {scenarios.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.name === best_decision.name ? 'url(#optGradient)' : 'url(#defGradient)'} 
+                        stroke={entry.name === best_decision.name ? '#10b981' : '#06b6d4'}
+                        strokeWidth={1}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+            <p className="text-[10px] text-slate-500 font-mono text-center mt-4">
+              COMPARATIVE EXPOSURE RATIOS SCANNED ACROSS PROPOSALS
+            </p>
           </div>
+        </GlassCard>
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '1rem', background: '#fffaf0', borderRadius: '8px', border: '1px solid #feebc8' }}>
-            <ShieldAlert color="#f4a261" size={24} style={{ flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700, color: '#f4a261', marginBottom: '0.25rem' }}>Constraint Awareness</div>
-              <div style={{ fontSize: '0.9rem', color: '#2d3748' }}>The current baseline risk is {risk_score}%, which requires immediate mitigation.</div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 'auto', textAlign: 'center' }}>
-            <button className="btn-primary" style={{ width: '100%' }} onClick={() => setShowExportModal(true)}>
-              Export Intelligence Report
-            </button>
-          </div>
-
-          {/* Export Modal */}
-          {showExportModal && (
-            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease' }}>
-              <div className="card shadow-sm" style={{ width: '100%', maxWidth: '400px', position: 'relative', animation: 'scaleIn 0.3s cubic-bezier(0.16,1,0.3,1)' }}>
-                <button onClick={() => setShowExportModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: '#5e6c84' }}>
-                  <X size={20} />
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: '#172b4d' }}>
-                  <Share2 size={24} color="#0052cc" />
-                  <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Share & Export</h3>
+        {/* Takeaways Card */}
+        <GlassCard className="p-5 flex flex-col justify-between h-full">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-6">Key Directives</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-900/30 text-emerald-200">
+                <CheckCircle className="text-emerald-400 shrink-0 mt-0.5" size={18} />
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider mb-0.5">Optimized Path Determined</div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                    The strategy "{best_decision.name}" delivers the highest resource efficiency.
+                  </p>
                 </div>
-                <p style={{ color: '#5e6c84', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select how you would like to share the {domain} strategic insights report.</p>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <button className="btn-secondary" onClick={() => handleExport('Email')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', padding: '0.75rem 1rem', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}>
-                    <Mail size={18} color="#0052cc" /> Send via Email
-                  </button>
-                  <button className="btn-secondary" onClick={() => handleExport('WhatsApp')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', padding: '0.75rem 1rem', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}>
-                    <MessageCircle size={18} color="#25D366" /> Share to WhatsApp
-                  </button>
-                  <button className="btn-secondary" onClick={() => handleExport('LinkedIn')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', padding: '0.75rem 1rem', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}>
-                    <Share2 size={18} color="#0077b5" /> Post to LinkedIn
-                  </button>
-                  <button className="btn-secondary" onClick={() => handleExport('PDF')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', padding: '0.75rem 1rem', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}>
-                    <Download size={18} color="#172b4d" /> Download as PDF
-                  </button>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/30 text-amber-200">
+                <ShieldAlert className="text-amber-400 shrink-0 mt-0.5" size={18} />
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider mb-0.5">Exposure Warning</div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                    Baseline risk parameters evaluate to {risk_score}%, necessitating proactive mitigation.
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-        </div>
+          <button 
+            onClick={() => setShowExportModal(true)}
+            className="w-full bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-3 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 font-mono uppercase tracking-wider mt-6"
+          >
+            Export Strategy Ledger
+          </button>
+        </GlassCard>
       </div>
+
+      {/* Share / Export Modal */}
+      <AnimatePresence>
+        {showExportModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1300] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-panel-heavy rounded-2xl w-full max-w-[360px] p-6 border border-white/10 shadow-2xl relative"
+            >
+              <button onClick={() => setShowExportModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors">
+                <X size={16} />
+              </button>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <Share2 size={18} className="text-neon-cyan" />
+                <h3 className="font-bold text-white text-xs tracking-wide uppercase font-mono">Dispatch & Export</h3>
+              </div>
+              <p className="text-slate-400 text-xs leading-relaxed mb-5 font-sans">
+                Select export protocol for the {domain} Decision Strategy ledger.
+              </p>
+              
+              <div className="space-y-1.5 font-mono">
+                <button onClick={() => handleExport('Email')} className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white transition-colors text-xs font-semibold">
+                  <Mail size={16} className="text-neon-cyan shrink-0" /> EMAIL PROTOCOL
+                </button>
+                <button onClick={() => handleExport('WhatsApp')} className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white transition-colors text-xs font-semibold">
+                  <MessageCircle size={16} className="text-emerald-400 shrink-0" /> WHATSAPP DIRECT
+                </button>
+                <button onClick={() => handleExport('LinkedIn')} className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white transition-colors text-xs font-semibold">
+                  <Share2 size={16} className="text-blue-400 shrink-0" /> LINKEDIN POST
+                </button>
+                <button onClick={() => handleExport('PDF')} className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white transition-colors text-xs font-semibold">
+                  <Download size={16} className="text-white shrink-0" /> PDF REPORT
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default DecisionInsightsPage;
-

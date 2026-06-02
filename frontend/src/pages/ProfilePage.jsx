@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { User, Mail, Briefcase, Building, Save, CheckCircle } from 'lucide-react';
+import { User, Mail, Briefcase, Building, Save, CheckCircle, ShieldCheck } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
+import GlassCard from '../components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ProfilePage = () => {
   const { user } = useContext(AppContext);
@@ -48,106 +50,136 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem', color: '#5e6c84' }}>Loading profile...</div>;
+  if (loading) {
+    return (
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center">
+        <div className="w-10 h-10 rounded-full border-2 border-neon-purple border-t-transparent animate-spin mb-4"></div>
+        <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">Fetching Operator Details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', animation: 'fadeIn 0.5s ease-out' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: '#172b4d', marginBottom: '0.5rem' }}>User Profile</h1>
-        <p style={{ color: '#5e6c84' }}>Manage your personal information and application preferences.</p>
-      </div>
+    <div className="max-w-[720px] mx-auto space-y-6 select-none">
+      {/* Header */}
+      <header className="pb-4 border-b border-white/5 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+            <User className="text-neon-cyan" size={24} />
+            Operator Profile
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">Manage credentials and authentication details.</p>
+        </div>
+      </header>
 
-      <div style={{ background: 'white', borderRadius: '8px', border: '1px solid #dfe1e6', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <div style={{ padding: '2rem', borderBottom: '1px solid #f4f5f7', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#0052cc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-            <User size={40} />
+      {/* Main Glass Panel */}
+      <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+        {/* Card Top / Avatar */}
+        <div className="p-6 border-b border-white/5 bg-white/[0.01] flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-neon-purple to-neon-cyan flex items-center justify-center text-white border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+            <User size={30} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#172b4d', margin: 0 }}>{profile.name}</h2>
-            <p style={{ color: '#5e6c84', margin: '0.25rem 0 0 0' }}>{profile.role} • {profile.department}</p>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">{profile.name}</h2>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5 uppercase tracking-wide">
+              {profile.role} • {profile.department}
+            </p>
           </div>
         </div>
 
-        <div style={{ padding: '2rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div className="form-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.85rem', color: '#44546f' }}>Full Name</label>
-              <div style={{ position: 'relative' }}>
-                <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8993a4' }} />
+        {/* Inputs */}
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Full Identity Name</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <User size={14} />
+                </span>
                 <input 
                   type="text" 
                   value={profile.name}
                   onChange={(e) => setProfile({...profile, name: e.target.value})}
-                  style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '4px', border: '1px solid #dfe1e6', outline: 'none', fontSize: '0.9rem' }} 
+                  className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.85rem', color: '#44546f' }}>Email Address</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8993a4' }} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Secure Email Node</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <Mail size={14} />
+                </span>
                 <input 
                   type="email" 
                   value={profile.email}
                   onChange={(e) => setProfile({...profile, email: e.target.value})}
-                  style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '4px', border: '1px solid #dfe1e6', outline: 'none', fontSize: '0.9rem' }} 
+                  className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.85rem', color: '#44546f' }}>Current Role</label>
-              <div style={{ position: 'relative' }}>
-                <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8993a4' }} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Operational Title</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <Briefcase size={14} />
+                </span>
                 <input 
                   type="text" 
                   value={profile.role}
                   onChange={(e) => setProfile({...profile, role: e.target.value})}
-                  style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '4px', border: '1px solid #dfe1e6', outline: 'none', fontSize: '0.9rem' }} 
+                  className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.85rem', color: '#44546f' }}>Department</label>
-              <div style={{ position: 'relative' }}>
-                <Building size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8993a4' }} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Operational Division</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <Building size={14} />
+                </span>
                 <input 
                   type="text" 
                   value={profile.department}
                   onChange={(e) => setProfile({...profile, department: e.target.value})}
-                  style={{ width: '100%', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '4px', border: '1px solid #dfe1e6', outline: 'none', fontSize: '0.9rem' }} 
+                  className="w-full bg-black/45 border border-white/5 focus:border-neon-cyan/50 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white outline-none transition-colors"
                 />
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="pt-4 border-t border-white/5 flex items-center gap-4">
             <button 
               onClick={handleSave}
               disabled={saving}
-              style={{ padding: '0.6rem 1.5rem', background: '#0052cc', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.2s' }}
-              onMouseOver={e => !saving && (e.currentTarget.style.background = '#0065ff')}
-              onMouseOut={e => !saving && (e.currentTarget.style.background = '#0052cc')}
+              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-6 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center gap-1.5 font-mono uppercase tracking-wider disabled:opacity-50"
             >
-              {saving ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+              {saving ? (
+                <div className="w-3.5 h-3.5 rounded-full border border-white border-t-transparent animate-spin"></div>
+              ) : (
+                <Save size={14} />
+              )}
+              Commit Changes
             </button>
-            {message && (
-              <div style={{ color: '#00875a', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                <CheckCircle size={16} /> {message}
-              </div>
-            )}
+            
+            <AnimatePresence>
+              {message && (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="text-emerald-400 font-semibold text-xs flex items-center gap-1"
+                >
+                  <CheckCircle size={14} /> {message}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}} />
     </div>
   );
 };

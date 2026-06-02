@@ -1,7 +1,8 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Search, Bell, User } from 'lucide-react';
+import { Search, Bell, User, Sparkles } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
   const { user } = useContext(AppContext);
@@ -15,7 +16,7 @@ const Header = () => {
 
   // Notification state
   const [showNotif, setShowNotif] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(2);
 
   // Close notifications on outside click
   useEffect(() => {
@@ -30,11 +31,17 @@ const Header = () => {
 
   const getTabName = () => {
     const path = location.pathname;
-    if (path.includes('dashboard')) return 'Strategic Dashboard';
-    if (path.includes('analysis')) return 'New Intelligence Analysis';
-    if (path.includes('simulation')) return 'Scenario Simulation';
-    if (path.includes('insights')) return 'Decision Insights';
-    return 'Decision Intelligence Platform';
+    if (path.includes('dashboard')) return 'System Analytics Dashboard';
+    if (path.includes('analysis')) return 'Predictive Project Scoping';
+    if (path.includes('simulation')) return 'Risk Scenario Planner';
+    if (path.includes('insights')) return 'AI Scenarios Analysis';
+    if (path.includes('kanban')) return 'Active Sprint Board';
+    if (path.includes('resource-allocation')) return 'Developer Resource Maps';
+    if (path.includes('analytics')) return 'Enterprise Intelligence';
+    if (path.includes('client-portal')) return 'Scoping Scans Board';
+    if (path.includes('profile')) return 'System Operator Profile';
+    if (path.includes('settings')) return 'Platform Configurations';
+    return 'Decision Intelligence Hub';
   };
 
   const handleSearch = (e) => {
@@ -43,42 +50,27 @@ const Header = () => {
   };
 
   const mockSearchResults = [
-    { id: 1, title: 'Project Delay Report (Q2)' },
-    { id: 2, title: 'Team Optimization Strategies' },
-    { id: 3, title: 'Risk Analysis: Cloud Migration' }
+    { id: 1, title: 'Project Delay Report (Q2)', type: 'Analytics' },
+    { id: 2, title: 'Team Optimization Strategies', type: 'Insight' },
+    { id: 3, title: 'Risk Analysis: Cloud Migration', type: 'Prediction' }
   ].filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Simulated real-time new notification
-  useEffect(() => {
-    const timer = setTimeout(() => setUnreadCount(prev => prev + 1), 15000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
-    <header className="app-header" style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0.75rem 2rem',
-      borderBottom: '1px solid #dfe1e6',
-      background: 'white',
-      position: 'sticky',
-      top: 0,
-      zIndex: 10,
-      height: '60px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#5e6c84', fontSize: '0.85rem' }}>
-        <span>Analyses</span>
-        <span style={{ margin: '0 0.5rem' }}>/</span>
-        <span style={{ color: '#172b4d', fontWeight: 600 }}>{getTabName()}</span>
+    <header className="h-[64px] border-b border-white/5 bg-bg-glass/80 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-10 shrink-0">
+      {/* Breadcrumb / Title */}
+      <div className="flex items-center gap-2 text-xs text-slate-400">
+        <span className="font-mono uppercase tracking-wider text-[10px]">OPERATIONAL STATE</span>
+        <span className="text-slate-600">/</span>
+        <span className="font-semibold text-white tracking-wide text-glow">{getTabName()}</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', color: '#5e6c84' }}>
+      {/* Control Actions */}
+      <div className="flex items-center gap-5">
         
-        {/* Search Container */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f4f5f7', padding: '0.4rem 0.75rem', borderRadius: '4px', border: '1px solid #dfe1e6' }}>
-            <Search size={14} />
+        {/* Command bar / Search */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/5 hover:border-white/10 focus-within:border-neon-purple/50 rounded-lg px-3 py-1.5 transition-all duration-300 w-52 focus-within:w-64">
+            <Search size={14} className="text-slate-400" />
             <input 
               type="text" 
               placeholder="Search insights..." 
@@ -86,56 +78,86 @@ const Header = () => {
               onChange={handleSearch}
               onFocus={() => searchQuery && setShowSearch(true)}
               onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-              style={{ background: 'transparent', border: 'none', fontSize: '0.85rem', outline: 'none', width: '150px' }} 
+              className="bg-transparent border-none text-xs text-white outline-none w-full placeholder-slate-500 font-sans" 
             />
+            <div className="text-[9px] font-mono text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/5 pointer-events-none">⌘K</div>
           </div>
           
-          {showSearch && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '0.5rem', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '0.5rem', zIndex: 100 }}>
-              {mockSearchResults.length > 0 ? mockSearchResults.map(res => (
-                <div key={res.id} style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', borderRadius: '3px', color: '#172b4d' }} onMouseOver={e => e.currentTarget.style.background = '#f4f5f7'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  {res.title}
-                </div>
-              )) : (
-                <div style={{ padding: '0.5rem', fontSize: '0.85rem', color: '#888' }}>No results found</div>
-              )}
-            </div>
-          )}
+          <AnimatePresence>
+            {showSearch && (
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                className="absolute top-[110%] left-0 right-0 glass-panel-heavy rounded-lg p-2 z-50 border border-white/10 shadow-2xl space-y-1"
+              >
+                {mockSearchResults.length > 0 ? mockSearchResults.map(res => (
+                  <div key={res.id} className="p-2 text-xs cursor-pointer rounded-md hover:bg-white/[0.04] text-slate-200 flex justify-between items-center transition-colors">
+                    <span>{res.title}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-neon-purple/10 border border-neon-purple/20 text-neon-purple font-mono uppercase">{res.type}</span>
+                  </div>
+                )) : (
+                  <div className="p-2 text-xs text-slate-500 text-center font-sans">No records located.</div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
-        {/* Notifications Container */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }} ref={notifRef}>
-          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => { setShowNotif(!showNotif); setUnreadCount(0); }}>
+        {/* Notifications */}
+        <div className="relative flex items-center" ref={notifRef}>
+          <button 
+            className="relative cursor-pointer text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/[0.02]"
+            onClick={() => { setShowNotif(!showNotif); setUnreadCount(0); }}
+          >
             <Bell size={18} />
             {unreadCount > 0 && (
-              <div style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#de350b', color: 'white', fontSize: '0.6rem', fontWeight: 'bold', width: '14px', height: '14px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {unreadCount}
-              </div>
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-bg-deep animate-pulse" />
             )}
-          </div>
+          </button>
 
-          {showNotif && (
-            <div style={{ position: 'absolute', top: '100%', right: -10, marginTop: '1rem', width: '250px', background: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 100 }}>
-              <div style={{ padding: '0.75rem', borderBottom: '1px solid #dfe1e6', fontWeight: 600, fontSize: '0.9rem', color: '#172b4d' }}>Recent Notifications</div>
-              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                <div style={{ padding: '0.75rem', borderBottom: '1px solid #dfe1e6', fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => setShowNotif(false)}>
-                  <div style={{ color: '#de350b', fontWeight: 600, marginBottom: '0.25rem' }}>High delay risk detected</div>
-                  <div style={{ color: '#5e6c84' }}>Project "Cloud DB" exceeds acceptable variance.</div>
+          <AnimatePresence>
+            {showNotif && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-[125%] right-0 w-[280px] glass-panel-heavy rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden"
+              >
+                <div className="p-3 border-b border-white/5 bg-white/[0.02] font-semibold text-xs text-white flex justify-between items-center">
+                  <span>System Diagnostics Logs</span>
+                  <span className="text-[9px] font-mono text-neon-cyan">2 UNREAD</span>
                 </div>
-                <div style={{ padding: '0.75rem', borderBottom: '1px solid #dfe1e6', fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => { setShowNotif(false); navigate('/insights'); }}>
-                  <div style={{ color: '#0052cc', fontWeight: 600, marginBottom: '0.25rem' }}>New analysis completed</div>
-                  <div style={{ color: '#5e6c84' }}>Your Software report is ready.</div>
+                <div className="max-h-[220px] overflow-y-auto divide-y divide-white/5">
+                  <div className="p-3 hover:bg-white/[0.02] cursor-pointer transition-colors" onClick={() => setShowNotif(false)}>
+                    <div className="text-rose-400 font-semibold text-[10px] flex items-center gap-1.5 uppercase mb-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                      Timeline Threat Alert
+                    </div>
+                    <div className="text-slate-300 text-[11px] leading-relaxed">High project delay risk detected in "Sprint 2" (exceeds 72%).</div>
+                  </div>
+                  <div className="p-3 hover:bg-white/[0.02] cursor-pointer transition-colors" onClick={() => { setShowNotif(false); navigate('/insights'); }}>
+                    <div className="text-neon-cyan font-semibold text-[10px] flex items-center gap-1.5 uppercase mb-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-neon-cyan"></span>
+                      Optimization Scans
+                    </div>
+                    <div className="text-slate-300 text-[11px] leading-relaxed">ML model has generated 3 suggested optimization scenarios.</div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
-        <Link to="/profile" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '4px', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f4f5f7'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#0052cc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+        {/* User Hub */}
+        <Link to="/profile" className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-lg hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-neon-purple to-neon-cyan flex items-center justify-center text-white border border-white/10 shadow-md">
             <User size={14} />
           </div>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#172b4d' }}>{user?.username || 'Decision Maker'}</span>
+          <div className="text-left shrink-0">
+            <div className="text-[11px] font-semibold text-white tracking-wide">{user?.username || 'System Operator'}</div>
+            <div className="text-[9px] text-slate-500 font-mono leading-none">{user?.role?.toUpperCase() || 'MANAGER'}</div>
+          </div>
         </Link>
       </div>
     </header>
@@ -143,4 +165,3 @@ const Header = () => {
 };
 
 export default Header;
-

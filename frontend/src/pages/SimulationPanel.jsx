@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { DataContext } from '../context/DataContext';
+import { SlidersHorizontal, AlertCircle, PlusCircle, Sparkles, HelpCircle, ChevronRight, CheckCircle2 } from 'lucide-react';
+import GlassCard from '../components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SimulationPanel = () => {
   const { projectData: data } = useContext(DataContext);
@@ -26,9 +29,19 @@ const SimulationPanel = () => {
 
   if (!data) {
     return (
-      <div style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#333' }}>No Simulation Data</h2>
-        <p style={{ color: '#666' }}>Run an analysis first to enable the interactive simulation engine.</p>
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-panel p-8 rounded-2xl border border-white/5 max-w-md w-full relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
+          <AlertCircle size={44} className="text-neon-purple mx-auto mb-4 animate-bounce" />
+          <h2 className="font-mono text-lg font-bold text-white uppercase tracking-wider mb-2">Simulation Engine Locked</h2>
+          <p className="text-slate-400 text-xs leading-relaxed mb-6">
+            Run an analysis model first to calibrate baseline parameters and enable interactive scenario calculations.
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -50,124 +63,162 @@ const SimulationPanel = () => {
   };
 
   const getRiskColor = (risk) => {
-    if (risk > 60) return '#de350b';
-    if (risk > 35) return '#ff991f';
-    return '#00875a';
+    if (risk > 60) return '#f43f5e'; // rose-500
+    if (risk > 35) return '#fbbf24'; // amber-400
+    return '#06b6d4'; // neon-cyan
+  };
+
+  const getRiskColorClass = (risk) => {
+    if (risk > 60) return 'text-rose-400';
+    if (risk > 35) return 'text-amber-400';
+    return 'text-cyan-400';
   };
 
   return (
-    <div className="animate-fade-in simulation-container" style={{ padding: '2rem' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#172b4d', margin: 0 }}>Strategic Decision Intelligence</h1>
-        <p style={{ fontSize: '1.1rem', color: '#5e6c84', marginTop: '0.5rem' }}>Simulate "What-If" scenarios and rank decision paths based on risk-to-resource efficiency.</p>
+    <div className="space-y-6 select-none">
+      {/* Header */}
+      <header className="pb-4 border-b border-white/5">
+        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <SlidersHorizontal className="text-neon-purple" size={24} />
+          Simulation Control Core
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">
+          Adjust pipeline parameters to run risk-to-resource optimizations.
+        </p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         
-        {/* Left: Interactive Controls */}
-        <div className="card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#172b4d', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0052cc' }}></div>
-            Interactive Scenario Parameters
-          </h3>
-          
-          <div style={{ marginBottom: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600, color: '#42526e' }}>Variable: Team Capacity</span>
-              <span style={{ background: '#deebff', color: '#0052cc', padding: '0.25rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{simTeamSize} Personnel</span>
-            </div>
-            <input 
-              type="range" min="1" max="30" value={simTeamSize} 
-              onChange={(e) => setSimTeamSize(parseInt(e.target.value))}
-              style={{ width: '100%', height: '6px', borderRadius: '3px', cursor: 'pointer' }}
-            />
-          </div>
+        {/* Left: Interactive Sliders Card */}
+        <GlassCard className="lg:col-span-2 p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-6 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-neon-cyan" />
+              Adjust Simulation Parameters
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Slider 1 */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Team Allocation Capacity</span>
+                  <span className="bg-neon-cyan/15 border border-neon-cyan/20 text-neon-cyan font-mono font-bold text-[10px] px-2 py-0.5 rounded">
+                    {simTeamSize} Personnel
+                  </span>
+                </div>
+                <input 
+                  type="range" min="1" max="30" value={simTeamSize} 
+                  onChange={(e) => setSimTeamSize(parseInt(e.target.value))}
+                  className="w-full accent-neon-cyan h-1 bg-white/[0.04] rounded-lg appearance-none cursor-pointer focus:outline-none"
+                />
+              </div>
 
-          <div style={{ marginBottom: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600, color: '#42526e' }}>Variable: Resource Allocation</span>
-              <span style={{ background: '#deebff', color: '#0052cc', padding: '0.25rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>Level {simResources}/10</span>
+              {/* Slider 2 */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Resource Integration Load</span>
+                  <span className="bg-neon-purple/15 border border-neon-purple/20 text-neon-purple font-mono font-bold text-[10px] px-2 py-0.5 rounded">
+                    Level {simResources}/10
+                  </span>
+                </div>
+                <input 
+                  type="range" min="1" max="10" value={simResources} 
+                  onChange={(e) => setSimResources(parseInt(e.target.value))}
+                  className="w-full accent-neon-purple h-1 bg-white/[0.04] rounded-lg appearance-none cursor-pointer focus:outline-none"
+                />
+              </div>
             </div>
-            <input 
-              type="range" min="1" max="10" value={simResources} 
-              onChange={(e) => setSimResources(parseInt(e.target.value))}
-              style={{ width: '100%', height: '6px', borderRadius: '3px', cursor: 'pointer' }}
-            />
           </div>
 
           <button 
-            className="btn-primary" 
-            style={{ width: '100%', padding: '1rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }} 
+            className="w-full bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-3 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center justify-center gap-1.5 font-mono uppercase tracking-wider mt-8" 
             onClick={handleSaveSnapshot}
           >
-            Lock Scenario & Rank Decision
+            <PlusCircle size={14} />
+            Lock Pathway Matrix
           </button>
-        </div>
+        </GlassCard>
 
-        {/* Right: Real-time Projection */}
-        <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', border: `2px solid ${getRiskColor(simRisk)}20` }}>
-          <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-            <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ebecf0" strokeWidth="3" />
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={getRiskColor(simRisk)} strokeWidth="3" strokeDasharray={`${simRisk}, 100`} style={{ transition: 'stroke-dasharray 0.5s ease' }} />
+        {/* Right: Radial Progress Risk Map */}
+        <GlassCard className="flex flex-col items-center justify-center py-6 text-center border-t-2" style={{ borderTopColor: getRiskColor(simRisk) }}>
+          <div className="relative w-44 h-44">
+            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255, 255, 255, 0.02)" strokeWidth="2.5" />
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={getRiskColor(simRisk)} strokeWidth="2.5" strokeDasharray={`${simRisk}, 100`} style={{ transition: 'stroke-dasharray 0.5s ease' }} />
             </svg>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#172b4d' }}>{simRisk}%</div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#5e6c84', textTransform: 'uppercase' }}>PROJECTED RISK</div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-3xl font-extrabold font-mono text-white tracking-tight leading-none" style={{ color: getRiskColor(simRisk) }}>{simRisk}%</div>
+              <div className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1.5">Projected Risk</div>
             </div>
           </div>
           
-          <div style={{ marginTop: '2rem', width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+          <div className="mt-6 w-full pt-4 border-t border-white/5">
+            <div className="flex justify-center gap-6 text-center font-mono">
               <div>
-                <div style={{ color: '#5e6c84', fontSize: '0.8rem', marginBottom: '0.25rem' }}>BASELINE</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#172b4d' }}>{baseRisk}%</div>
+                <div className="text-slate-500 text-[8px] font-bold uppercase tracking-wider mb-0.5">BASELINE</div>
+                <div className="text-xs font-bold text-white">{baseRisk}%</div>
               </div>
-              <div style={{ width: '1px', background: '#dfe1e6' }}></div>
+              <div className="w-[1px] bg-white/5 h-6"></div>
               <div>
-                <div style={{ color: '#5e6c84', fontSize: '0.8rem', marginBottom: '0.25rem' }}>DELTA</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: simRisk < baseRisk ? '#00875a' : '#de350b' }}>
+                <div className="text-slate-500 text-[8px] font-bold uppercase tracking-wider mb-0.5">DELTA</div>
+                <div className={`text-xs font-bold ${simRisk < baseRisk ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {simRisk < baseRisk ? '-' : '+'}{Math.abs(baseRisk - simRisk).toFixed(1)}%
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
       </div>
 
       {/* Decision Ranking System */}
-      <div style={{ marginTop: '2rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#172b4d', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="pt-4 space-y-4">
+        <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           Decision Path Ranking System
         </h3>
         
         {snapshots.length === 0 ? (
-          <div style={{ padding: '3rem', border: '2px dashed #dfe1e6', borderRadius: '8px', textAlign: 'center', color: '#5e6c84' }}>
-            No scenarios locked. Use the sliders above to simulate and save decision pathways for AI comparison.
+          <div className="py-12 border border-dashed border-white/5 rounded-2xl text-center text-slate-500 text-xs font-sans">
+            No scenarios locked. Calibrate parameters using sliders above, then lock them to evaluate metrics.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="space-y-3">
             {snapshots.sort((a, b) => b.efficiency - a.efficiency).map((snapshot, i) => (
-              <div key={snapshot.id} className="animate-slide-in" style={{ padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px solid #dfe1e6', display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 100px', alignItems: 'center', boxShadow: i === 0 ? '0 4px 12px rgba(0, 82, 204, 0.1)' : 'none', borderColor: i === 0 ? '#0052cc' : '#dfe1e6' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? '#0052cc' : '#dfe1e6' }}>#{i + 1}</div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#5e6c84', fontWeight: 600 }}>TEAM / RESOURCE</div>
-                  <div style={{ fontWeight: 700, color: '#172b4d' }}>{snapshot.teamSize}P / Lvl {snapshot.resources}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#5e6c84', fontWeight: 600 }}>EXPOSURE RISK</div>
-                  <div style={{ fontWeight: 700, color: getRiskColor(snapshot.risk) }}>{snapshot.risk}%</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#5e6c84', fontWeight: 600 }}>EFFICIENCY RATIO</div>
-                  <div style={{ fontWeight: 700, color: '#172b4d' }}>{snapshot.efficiency}</div>
-                </div>
-                {i === 0 && (
-                  <div style={{ background: '#deebff', color: '#0052cc', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800, textAlign: 'center' }}>
-                    RECOMMENDED
+              <div 
+                key={snapshot.id} 
+                className={`glass-panel p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 ${
+                  i === 0 
+                    ? 'border-neon-cyan bg-neon-cyan/5 shadow-[0_0_15px_rgba(6,182,212,0.1)]' 
+                    : 'border-white/5 bg-white/[0.01]'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`font-mono font-extrabold text-sm shrink-0 ${i === 0 ? 'text-neon-cyan' : 'text-slate-500'}`}>#{i + 1}</div>
+                  <div>
+                    <div className="text-[8px] text-slate-500 font-mono uppercase">ALLOCATED SPEC</div>
+                    <div className="text-xs font-bold text-white font-sans">{snapshot.teamSize}P / Lvl {snapshot.resources}</div>
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <div className="text-[8px] text-slate-500 font-mono uppercase">EXPOSURE RISK</div>
+                  <div className={`text-xs font-bold font-mono ${getRiskColorClass(snapshot.risk)}`}>{snapshot.risk}%</div>
+                </div>
+
+                <div>
+                  <div className="text-[8px] text-slate-500 font-mono uppercase">EFFICIENCY RATIO</div>
+                  <div className="text-xs font-bold text-white font-mono">{snapshot.efficiency}</div>
+                </div>
+
+                <div className="shrink-0 flex items-center">
+                  {i === 0 ? (
+                    <span className="bg-neon-cyan/15 border border-neon-cyan/20 text-neon-cyan font-mono font-bold text-[8px] px-2 py-0.5 rounded tracking-wider flex items-center gap-1">
+                      <CheckCircle2 size={10} /> RECOMMENDED
+                    </span>
+                  ) : (
+                    <span className="text-[8px] text-slate-500 font-mono uppercase">Ranked Strategy</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -179,4 +230,3 @@ const SimulationPanel = () => {
 };
 
 export default SimulationPanel;
-
