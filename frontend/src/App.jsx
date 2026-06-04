@@ -57,7 +57,7 @@ const AppLayout = () => {
         <Header />
         <main className="flex-1 overflow-y-auto p-6 md:p-8 relative">
           <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
+            <Routes key={location.pathname}>
               <Route path="dashboard" element={<AnimatedRouteWrapper><DashboardPage /></AnimatedRouteWrapper>} />
               <Route path="kanban" element={<AnimatedRouteWrapper><KanbanBoard /></AnimatedRouteWrapper>} />
               <Route path="analysis" element={<AnimatedRouteWrapper><NewAnalysisPage /></AnimatedRouteWrapper>} />

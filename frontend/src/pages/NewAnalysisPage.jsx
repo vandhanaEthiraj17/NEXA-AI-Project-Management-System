@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { DataContext } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Upload, FileText, Layers, ChevronRight, Search, Cpu, Sparkles, X, LayoutGrid } from 'lucide-react';
+import { AlertCircle, Upload, FileText, Layers, ChevronRight, Search, Cpu, Sparkles, X, LayoutGrid, RefreshCw } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -253,7 +253,7 @@ const NewAnalysisPage = () => {
               className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-3 px-8 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center justify-center gap-1.5 font-mono uppercase tracking-wider"
             >
               {isAnalyzing ? (
-                <Loader2 size={16} className="animate-spin" />
+                <RefreshCw size={16} className="animate-spin" />
               ) : (
                 <Sparkles size={14} />
               )}
@@ -319,9 +319,9 @@ const NewAnalysisPage = () => {
 
               {/* Tasks List */}
               <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 divide-y divide-white/5">
-                {tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                {Array.isArray(tasks) && tasks.filter(t => t?.title?.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
                   tasks
-                    .filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .filter(t => t?.title?.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map(task => (
                       <div 
                         key={task.id} 

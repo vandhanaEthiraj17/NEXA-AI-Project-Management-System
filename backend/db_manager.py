@@ -42,6 +42,7 @@ class DatabaseManager:
         c.execute('CREATE TABLE IF NOT EXISTS Proposals (id INTEGER PRIMARY KEY AUTOINCREMENT, brief_id INTEGER, tasks_json TEXT, estimated_cost INTEGER, estimated_days INTEGER, status TEXT DEFAULT "draft", created_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
         c.execute('CREATE TABLE IF NOT EXISTS Developers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, skills TEXT, availability BOOLEAN DEFAULT 1)')
         c.execute('CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT "user")')
+        c.execute('CREATE TABLE IF NOT EXISTS HistoricalSprints (id INTEGER PRIMARY KEY AUTOINCREMENT, sprint_id INTEGER NOT NULL, name TEXT NOT NULL, total_tasks INTEGER, delayed_tasks INTEGER, actual_duration_days INTEGER, predicted_risk REAL, efficiency_score REAL, completed_at DATETIME DEFAULT CURRENT_TIMESTAMP)')
         
         # Seed Users if none exist
         count_users = conn.execute('SELECT COUNT(*) FROM Users').fetchone()[0]
@@ -56,10 +57,13 @@ class DatabaseManager:
         count = conn.execute('SELECT COUNT(*) FROM Developers').fetchone()[0]
         if count == 0:
             devs = [
-                ('Alice Chen', 'react,frontend,css', 1),
-                ('Bob Smith', 'backend,database,python', 1),
-                ('Charlie Davis', 'mobile,ios,android', 1),
-                ('Diana Prince', 'qa,documentation,testing', 1)
+                ('Alice Chen', 'react,frontend,ui/ux,css', 1),
+                ('Bob Smith', 'backend,database,python,postgres', 1),
+                ('Charlie Davis', 'mobile,ios,android,flutter', 1),
+                ('Diana Prince', 'qa,testing,security,automation', 1),
+                ('Edward Stone', 'devops,cloud,aws,docker,kubernetes', 1),
+                ('Fiona Gallagher', 'ml,ai,data science,nlp,python', 1),
+                ('George Clark', 'product,agile,architecture,scrum', 1)
             ]
             conn.executemany('INSERT INTO Developers (name, skills, availability) VALUES (?, ?, ?)', devs)
         
@@ -122,6 +126,18 @@ class DatabaseManager:
         else:
             conn = self.get_sqlite_conn()
             conn.execute('UPDATE Tasks SET status = ? WHERE id = ?', (status, task_id))
+            conn.commit()
+            conn.close()
+
+    def update_task_assignee(self, task_id, assignee):
+        if self.use_mongodb:
+            try:
+                self.mongo_db.tasks.update_one({'_id': ObjectId(task_id)}, {'$set': {'assignee': assignee}})
+            except:
+                pass
+        else:
+            conn = self.get_sqlite_conn()
+            conn.execute('UPDATE Tasks SET assignee = ? WHERE id = ?', (assignee, task_id))
             conn.commit()
             conn.close()
 
@@ -241,5 +257,50 @@ class DatabaseManager:
             devs = conn.execute('SELECT * FROM Developers').fetchall()
             conn.close()
             return [dict(d) for d in devs]
+
+    def log_historical_sprint(self, sprint_id, name, total_tasks, delayed_tasks, actual_duration_days, predicted_risk, efficiency_score):
+        if self.use_mongodb:
+            self.mongo_db.historical_sprints.insert_one({
+                "sprint_id": sprint_id,
+                "name": name,
+                "total_tasks": total_tasks,
+                "delayed_tasks": delayed_tasks,
+                "actual_duration_days": actual_duration_days,
+                "predicted_risk": predicted_risk,
+                "efficiency_score": efficiency_score
+            })
+        else:
+            conn = self.get_sqlite_conn()
+            conn.execute('''
+                INSERT INTO HistoricalSprints (sprint_id, name, total_tasks, delayed_tasks, actual_duration_days, predicted_risk, efficiency_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (sprint_id, name, total_tasks, delayed_tasks, actual_duration_days, predicted_risk, efficiency_score))
+            conn.commit()
+            conn.close()
+
+    def get_historical_sprints(self):
+        if self.use_mongodb:
+            hist = list(self.mongo_db.historical_sprints.find())
+            for h in hist:
+                h['id'] = str(h['_id'])
+                del h['_id']
+            return hist
+        else:
+            conn = self.get_sqlite_conn()
+            hist = conn.execute('SELECT * FROM HistoricalSprints ORDER BY completed_at DESC').fetchall()
+            conn.close()
+            return [dict(h) for h in hist]
+
+    def complete_sprint(self, sprint_id):
+        if self.use_mongodb:
+            try:
+                self.mongo_db.sprints.update_one({'_id': ObjectId(sprint_id)}, {'$set': {'status': 'completed'}})
+            except:
+                pass
+        else:
+            conn = self.get_sqlite_conn()
+            conn.execute("UPDATE Sprints SET status = 'completed' WHERE id = ?", (sprint_id,))
+            conn.commit()
+            conn.close()
 
 db_manager = DatabaseManager()

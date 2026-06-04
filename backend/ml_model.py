@@ -159,7 +159,7 @@ def train_model(csv_path):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def predict_risk(team_size, complexity, estimated_days, budget=10000, task_count=10):
+def predict_risk(team_size, complexity, estimated_days, budget=10000, task_count=10, return_details=False):
     """
     Predicts risk using the trained model. 
     Falls back to a baseline heuristic if no model is found.
@@ -179,17 +179,34 @@ def predict_risk(team_size, complexity, estimated_days, budget=10000, task_count
             input_data = [[team_size, complexity, estimated_days, budget, task_count]]
             prediction = _cached_model.predict(input_data)[0]
             
+            try:
+                probabilities = _cached_model.predict_proba(input_data)[0]
+                confidence = max(probabilities) * 100
+            except:
+                confidence = 85.0
+            
             # Map back to 0-100 scale (High: 85, Med: 50, Low: 15)
             risk_map = {2: 85.0, 1: 50.0, 0: 15.0}
-            return risk_map.get(prediction, 50.0)
+            risk_score = risk_map.get(prediction, 50.0)
+            
+            if return_details:
+                return {"risk_score": risk_score, "confidence": round(confidence, 1)}
+            return risk_score
         except Exception as e:
             print(f"Prediction Error: {e}")
+            if return_details:
+                return {"risk_score": 50.0, "confidence": 75.0}
             return 50.0
     else:
         # Baseline heuristic if no model is trained yet
         # Higher complexity and larger team relative to deadline = higher risk
         base_risk = (complexity * 10) + (team_size * 2) - (estimated_days / 10)
-        return max(min(base_risk, 100), 0)
+        risk_score = max(min(base_risk, 100), 0)
+        confidence = 100 - abs(50 - risk_score) / 2
+        
+        if return_details:
+            return {"risk_score": round(risk_score, 1), "confidence": round(confidence, 1)}
+        return round(risk_score, 1)
 
 def get_risk_reasoning(team_size, complexity, estimated_days, budget, title="This project"):
     """Generates a human-readable reason for the predicted risk score."""

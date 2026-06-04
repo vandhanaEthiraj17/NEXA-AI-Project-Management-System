@@ -1,17 +1,24 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DataContext } from '../context/DataContext';
+import { SocketContext } from '../context/SocketContext';
 import TaskCard from '../components/TaskCard';
 import TaskFormModal from '../components/TaskFormModal';
-import { Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, BarChart2, Sparkles, Circle, Download, ShieldAlert, Cpu } from 'lucide-react';
+import { 
+  Plus, Layout, ListTodo, Play, CheckCircle, AlertTriangle, 
+  BarChart2, Sparkles, Circle, Download, ShieldAlert, Cpu, 
+  RefreshCw, Award, Activity, X
+} from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const KanbanBoard = () => {
+  const navigate = useNavigate();
   const { 
     tasks, sprints, pmStats, fetchTasks, fetchSprints, fetchPmStats, 
-    updateTaskStatus, createSprint, projectData, createTask,
-    monitorSprint, retrainAI
+    updateTaskStatus, createSprint, projectData, createTask, monitorSprint
   } = useContext(DataContext);
+  const { socket } = useContext(SocketContext);
   
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
@@ -21,6 +28,8 @@ const KanbanBoard = () => {
   const [monitorResult, setMonitorResult] = useState(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [hasTrained, setHasTrained] = useState(false);
+  const [activeDragColumn, setActiveDragColumn] = useState(null);
+  const [draggingTaskId, setDraggingTaskId] = useState(null);
   
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [trainingStep, setTrainingStep] = useState(0);
@@ -72,43 +81,40 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
     document.body.removeChild(a);
   };
 
+  // Upgraded real training loop directly hitting Sprints Complete pipeline
   const handleTrainAI = async () => {
     setShowTrainingModal(true);
     setTrainingStep(0);
     
     // Step 1: Collect Metrics
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 1000));
     setTrainingStep(1);
 
-    const totalComplexity = tasks.reduce((sum, t) => sum + parseInt(t.complexity || 5), 0);
-    const avgComplexity = totalComplexity / tasks.length || 5;
-    
-    const maxDeadline = Math.max(...tasks.map(t => parseInt(t.deadline_days || 10)), 5);
-    const estimatedDays = maxDeadline;
-    const actualDays = maxDeadline - 1; // Real-world simulation
-
-    const sprintStats = {
-      team_size: Math.floor(Math.random() * 5) + 3,
-      project_complexity: Math.round(avgComplexity),
-      estimated_days: estimatedDays,
-      actual_days: actualDays,
-      budget: 15000,
-      task_count: tasks.length
-    };
-
-    // Step 2: Add to Dataset
-    await new Promise(r => setTimeout(r, 1200));
+    // Step 2: Push log
+    await new Promise(r => setTimeout(r, 1000));
     setTrainingStep(2);
 
-    // Step 3: Retrain the Model
-    const res = await retrainAI(sprintStats);
-    await new Promise(r => setTimeout(r, 1200));
-    
-    if(res && res.status === 'success') {
-      setTrainingStep(3); // Complete
-      setHasTrained(true);
-    } else {
-      alert("Failed to retrain ML model directly.");
+    try {
+      const response = await fetch('http://localhost:5000/api/sprints/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sprint_id: selectedSprintId })
+      });
+      
+      await new Promise(r => setTimeout(r, 1200));
+      
+      if (response.ok) {
+        setTrainingStep(3);
+        setHasTrained(true);
+        // Refresh local cache lists
+        fetchSprints();
+        fetchPmStats();
+      } else {
+        alert("ML training loop error.");
+        setShowTrainingModal(false);
+      }
+    } catch (err) {
+      console.error(err);
       setShowTrainingModal(false);
     }
   };
@@ -120,7 +126,9 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
 
   useEffect(() => {
     if (sprints.length > 0 && !selectedSprintId) {
-      setSelectedSprintId(sprints[0].id);
+      // Find the first active sprint if available
+      const activeSprint = sprints.find(s => s.status === 'active');
+      setSelectedSprintId(activeSprint ? activeSprint.id : sprints[0].id);
     }
   }, [sprints]);
 
@@ -130,16 +138,61 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
     }
   }, [selectedSprintId]);
 
+  // Synchronize tasks live on remote WebSocket broadcasts
+  useEffect(() => {
+    if (socket) {
+      const handleTaskSync = (payload) => {
+        if (selectedSprintId) {
+          fetchTasks(selectedSprintId);
+          fetchPmStats();
+        }
+      };
+      
+      socket.on('task_updated', handleTaskSync);
+      return () => {
+        socket.off('task_updated', handleTaskSync);
+      };
+    }
+  }, [socket, selectedSprintId, fetchTasks, fetchPmStats]);
+
   const handleStatusChange = (taskId, newStatus) => {
     updateTaskStatus(taskId, newStatus, selectedSprintId);
   };
 
-  const activeSprint = sprints.find(s => s.id === parseInt(selectedSprintId));
+  // Custom concurrent drag drop pipelines (React 19 friendly)
+  const handleDragStart = (e, taskId) => {
+    setDraggingTaskId(taskId);
+    e.dataTransfer.setData('text/plain', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, columnId) => {
+    e.preventDefault();
+    if (activeDragColumn !== columnId) {
+      setActiveDragColumn(columnId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setActiveDragColumn(null);
+  };
+
+  const handleDrop = (e, columnId) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('text/plain') || draggingTaskId;
+    
+    if (taskId) {
+      handleStatusChange(taskId, columnId);
+    }
+    
+    setDraggingTaskId(null);
+    setActiveDragColumn(null);
+  };
 
   const columns = [
-    { id: 'To Do', icon: <ListTodo size={15} />, color: 'text-slate-400', border: 'border-t-slate-500/30' },
-    { id: 'In Progress', icon: <Play size={15} />, color: 'text-neon-purple', border: 'border-t-neon-purple/30' },
-    { id: 'Done', icon: <CheckCircle size={15} />, color: 'text-emerald-400', border: 'border-t-emerald-500/30' }
+    { id: 'To Do', icon: <ListTodo size={14} />, color: 'text-slate-400', border: 'border-t-slate-600/30', glow: 'shadow-[0_0_15px_rgba(255,255,255,0.03)]' },
+    { id: 'In Progress', icon: <Play size={14} />, color: 'text-neon-purple', border: 'border-t-neon-purple/30', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.08)]' },
+    { id: 'Done', icon: <CheckCircle size={14} className="text-emerald-400" />, color: 'text-emerald-400', border: 'border-t-emerald-500/30', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.08)]' }
   ];
 
   return (
@@ -147,12 +200,16 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
       {/* Page Header */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 pb-4 border-b border-white/5">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon-purple animate-pulse"></span>
+            <span className="text-[9px] font-bold text-neon-purple uppercase tracking-widest font-mono">Agile Workflow Hub</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2 mt-1">
             <Layout className="text-neon-purple" size={24} />
-            Agile Operations Control
+            Operations Control Board
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Predictive Agile project oversight and workload risk mapping.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Predictive burndown oversight and live project workflow lanes.
           </p>
         </div>
         
@@ -160,78 +217,83 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
           <div className="flex gap-2">
             <select 
               value={selectedSprintId || ''}
-              onChange={(e) => setSelectedSprintId(e.target.value)}
-              className="bg-black/45 border border-white/5 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer focus:border-neon-purple/50 font-sans"
+              onChange={(e) => {
+                setSelectedSprintId(e.target.value);
+                setHasTrained(false); // Reset training flag for new sprint
+              }}
+              className="bg-black/45 border border-white/5 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer focus:border-neon-purple/50 font-mono tracking-wide"
             >
               {sprints.map(s => (
-                <option key={s.id} value={s.id} className="bg-bg-deep text-white">{s.name} ({s.status.toUpperCase()})</option>
+                <option key={s.id} value={s.id} className="bg-bg-deep text-white">
+                  {s.name.toUpperCase()} ({s.status.toUpperCase()})
+                </option>
               ))}
             </select>
             
             <button 
-              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center gap-1.5 shrink-0"
+              className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 flex items-center gap-1.5 shrink-0 font-mono"
               onClick={() => setShowTaskModal(true)}
             >
               <Plus size={16} />
-              Add Task Spec
+              ADD TASK SPEC
             </button>
           </div>
           
           <div className="flex gap-2">
             <button 
-              className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
+              className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-slate-300 hover:text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1.5 font-mono"
               onClick={handleMonitorSprint}
               disabled={isMonitoring}
             >
               <AlertTriangle size={14} className="text-rose-400" />
-              {isMonitoring ? 'Scanning...' : 'Monitor Risks'}
+              {isMonitoring ? 'SCANNING...' : 'MONITOR RISKS'}
             </button>
             <button 
-              className="bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/20 hover:border-neon-cyan/40 text-neon-cyan font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+              className="bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/20 hover:border-neon-cyan/40 text-neon-cyan font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 font-mono"
               onClick={() => setShowAISuggestions(true)}
             >
               <Sparkles size={14} />
-              Add from AI Suggestions
+              SUGGEST ACTIONS
             </button>
           </div>
         </div>
       </header>
 
-      {/* Stats Overview */}
+      {/* Stats KPI Overview bar */}
       {pmStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <GlassCard className="py-3 px-4 border-l-2 border-l-slate-500">
-            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+          <GlassCard className="py-3.5 px-4 border-l-2 border-l-slate-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider font-mono">
               <span>Sprint Scope</span>
-              <BarChart2 size={14} />
+              <BarChart2 size={14} className="text-slate-400" />
             </div>
-            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{pmStats.total}</h2>
+            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{tasks.length} Tasks</h2>
           </GlassCard>
-          <GlassCard className="py-3 px-4 border-l-2 border-l-rose-500">
-            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
+          <GlassCard className="py-3.5 px-4 border-l-2 border-l-rose-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider font-mono">
               <span>Risk Warning</span>
               <AlertTriangle size={14} className="text-rose-500 animate-pulse" />
             </div>
-            <h2 className="text-2xl font-extrabold font-mono text-rose-400 mt-1">{pmStats.highRisk}</h2>
+            <h2 className="text-2xl font-extrabold font-mono text-rose-400 mt-1">{tasks.filter(t => t.status !== 'Done' && intComplexity(t.complexity) > 7).length} Tasks</h2>
           </GlassCard>
-          <GlassCard className="py-3 px-4 border-l-2 border-l-neon-purple">
-            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
-              <span>In Flight</span>
+          <GlassCard className="py-3.5 px-4 border-l-2 border-l-neon-purple">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider font-mono">
+              <span>Active execution</span>
               <Play size={14} className="text-neon-purple" />
             </div>
-            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{pmStats.inProgress}</h2>
+            <h2 className="text-2xl font-extrabold font-mono text-white mt-1">{tasks.filter(t => t.status === 'In Progress').length} Flights</h2>
           </GlassCard>
-          <GlassCard className="py-3 px-4 border-l-2 border-l-emerald-500">
-            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider">
-              <span>Resolved</span>
+          <GlassCard className="py-3.5 px-4 border-l-2 border-l-emerald-500">
+            <div className="flex justify-between items-center text-slate-500 text-[9px] font-bold uppercase tracking-wider font-mono">
+              <span>Resolved Lanes</span>
               <CheckCircle size={14} className="text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-extrabold font-mono text-emerald-400 mt-1">{pmStats.done}</h2>
+            <h2 className="text-2xl font-extrabold font-mono text-emerald-400 mt-1">{tasks.filter(t => t.status === 'Done').length} Complete</h2>
           </GlassCard>
         </div>
       )}
 
-      {/* Completed Sprint Retraining Loop */}
+      {/* Completed Sprint Ingestion and retrain banner */}
       {isSprintComplete && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
@@ -241,9 +303,11 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
           <div>
             <h3 className="text-white font-bold text-sm flex items-center gap-2">
               <CheckCircle size={20} className="text-emerald-400" />
-              Sprint Phase Completed Successfully
+              Sprint Cycle Fully Completed
             </h3>
-            <p className="text-slate-400 text-xs mt-1">All {tasks.length} task specs are resolved. Retrain the model on actual delivery variance.</p>
+            <p className="text-slate-400 text-xs mt-1 font-sans">
+              All tasks in **{sprints.find(s => s.id === parseInt(selectedSprintId))?.name || 'Sprint'}** are closed. Ready to calibrate predictive machine learning engines on actual output metrics.
+            </p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <button 
@@ -263,18 +327,28 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
               disabled={hasTrained}
             >
               <Cpu size={14} />
-              {hasTrained ? 'Neural Cache Updated ✓' : 'Ingest Retraining Model'}
+              {hasTrained ? 'Neural calibration complete ✓' : 'INGEST & RETRAIN ML MODEL'}
             </button>
           </div>
         </motion.div>
       )}
 
-      {/* Columns Grid */}
+      {/* Kanban status columns lane grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start min-h-[55vh]">
         {columns.map(col => {
           const colTasks = tasks.filter(t => t.status === col.id);
+          const isOver = activeDragColumn === col.id;
+          
           return (
-            <div key={col.id} className="glass-panel p-4 rounded-2xl flex flex-col gap-3 h-full max-h-[70vh] border-t-2 overflow-hidden bg-white/[0.01]">
+            <div 
+              key={col.id} 
+              onDragOver={(e) => handleDragOver(e, col.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, col.id)}
+              className={`glass-panel p-4 rounded-2xl flex flex-col gap-3 h-full max-h-[70vh] border-t-2 overflow-hidden bg-white/[0.01] transition-all duration-200 ${col.border} ${
+                isOver ? 'border-2 border-dashed border-neon-purple/60 bg-neon-purple/5 shadow-2xl scale-[1.01]' : 'border border-white/5'
+              }`}
+            >
               {/* Column Header */}
               <div className="flex justify-between items-center pb-2 border-b border-white/5 font-mono font-bold text-[10px] tracking-wider uppercase">
                 <div className={`flex items-center gap-1.5 ${col.color}`}>
@@ -285,18 +359,31 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
               </div>
               
               {/* Task list container */}
-              <div className="flex-1 overflow-y-auto pr-1">
-                {colTasks.map(task => (
-                  <TaskCard 
-                    key={task.id} 
-                    task={task} 
-                    onStatusChange={handleStatusChange}
-                  />
-                ))}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {colTasks.map(task => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      key={task.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      className="cursor-grab active:cursor-grabbing"
+                    >
+                      <TaskCard 
+                        task={task} 
+                        onStatusChange={handleStatusChange}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 
                 {colTasks.length === 0 && (
-                  <div className="text-center py-12 border border-dashed border-white/5 rounded-xl text-slate-600 text-xs font-sans">
-                    No active processes here
+                  <div className="text-center py-12 border border-dashed border-white/5 rounded-xl text-slate-600 text-xs font-mono uppercase tracking-wide">
+                    LANE VACANT
                   </div>
                 )}
               </div>
@@ -305,7 +392,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
         })}
       </div>
 
-      {/* Task Modal Trigger */}
+      {/* Task Creation Form Modal */}
       {showTaskModal && (
         <TaskFormModal 
           onClose={() => setShowTaskModal(false)} 
@@ -313,7 +400,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
         />
       )}
 
-      {/* Sprint Monitor Warnings Modal */}
+      {/* Sprint Monitor Risks Alerts Modal */}
       <AnimatePresence>
         {monitorResult && (
           <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1300] flex items-center justify-center p-4">
@@ -324,7 +411,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
               className="glass-panel-heavy rounded-2xl w-full max-w-[460px] p-6 border border-white/10 shadow-2xl relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
-              <h3 className="font-bold text-white text-sm tracking-wide uppercase font-mono flex items-center gap-1.5 text-rose-400 mb-3">
+              <h3 className="font-bold text-white text-xs tracking-wide uppercase font-mono flex items-center gap-1.5 text-rose-400 mb-3">
                 <ShieldAlert size={18} />
                 Risk Diagnostic Pulse
               </h3>
@@ -336,7 +423,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
                     <div key={idx} className="bg-rose-950/20 border border-rose-900/30 p-3.5 rounded-xl">
                       <strong className="text-rose-400 text-[10px] uppercase font-mono tracking-wider block mb-1">{riskGroup.type}</strong>
                       <p className="text-slate-400 text-[10px] leading-relaxed mb-2 font-sans">{riskGroup.message}</p>
-                      <ul className="list-disc pl-4 text-xs text-rose-300 space-y-1 font-mono text-[10px]">
+                      <ul className="list-disc pl-4 text-rose-300 space-y-1 font-mono text-[9px]">
                         {riskGroup.tasks.map((pt, taskIdx) => (
                           <li key={taskIdx}>{pt}</li>
                         ))}
@@ -347,7 +434,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
               )}
 
               {monitorResult.recommendation && (
-                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl mb-5 text-[11px] text-slate-400 leading-relaxed">
+                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl mb-5 text-[11px] text-slate-400 leading-relaxed font-sans">
                   <strong className="text-white block mb-0.5 text-[10px] uppercase font-mono">Suggested Mitigation Plan:</strong>
                   {monitorResult.recommendation}
                 </div>
@@ -376,7 +463,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-cyan"></div>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-sm font-bold text-white tracking-wide uppercase font-mono flex items-center gap-1.5">
+                <h2 className="text-xs font-bold text-white tracking-wide uppercase font-mono flex items-center gap-1.5">
                   <Sparkles size={16} className="text-neon-cyan" />
                   AI Suggested Actions
                 </h2>
@@ -387,10 +474,10 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
 
               {!projectData ? (
                 <div className="text-center py-8 text-slate-500 space-y-3">
-                  <p className="text-xs">No active Simulation Scan found.</p>
+                  <p className="text-xs font-mono">No active Intelligence Scan found.</p>
                   <button 
                     onClick={() => { setShowAISuggestions(false); navigate('/app/analysis'); }}
-                    className="bg-neon-purple hover:bg-neon-purple/80 text-white text-xs font-semibold py-2 px-4 rounded-lg cursor-pointer"
+                    className="bg-neon-purple hover:bg-neon-purple/80 text-white text-xs font-semibold py-2 px-4 rounded-lg cursor-pointer font-mono"
                   >
                     Launch Simulation Scan
                   </button>
@@ -511,7 +598,7 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
               placeholder="e.g. Sprint Alpha"
               value={newSprintName}
               onChange={(e) => setNewSprintName(e.target.value)}
-              className="flex-1 bg-black/45 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-neon-purple/50 font-sans"
+              className="flex-1 bg-black/45 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-neon-purple/50 font-mono tracking-wide uppercase"
             />
             <button 
               className="bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs py-2.5 px-5 rounded-xl cursor-pointer transition-colors uppercase tracking-wider font-mono shrink-0"
@@ -524,6 +611,11 @@ ${tasks.map(t => `| **[${t.status}]** | ${t.title} | ${t.complexity || 5} | ${t.
       )}
     </div>
   );
+};
+
+const intComplexity = (val) => {
+  const parsed = parseInt(val);
+  return isNaN(parsed) ? 5 : parsed;
 };
 
 export default KanbanBoard;
